@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Later Lane — Focus & Urge Parking</title>
+  <meta name="description" content="A calm focus app for the urge to check your phone. Park the impulse instead of fighting it.">
+  <meta name="theme-color" content="#07090F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Later Lane">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+
+  <!-- Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- Serene Sanctuary Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- MINIMAL FLOATING TOP BAR -->
+  <header class="w-full px-5 sm:px-10 py-4 flex items-center justify-between gap-3 z-30">
+    <div class="flex items-center gap-2.5 cursor-pointer shrink-0 group" onclick="window.app.showScreen('screen-intent')">
+      <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0D9488] to-[#2DD4BF] flex items-center justify-center shadow-sm shadow-teal-500/20 group-hover:scale-105 transition">
+        <span class="w-2 h-2 rounded-full bg-white/90"></span>
+      </div>
+      <span class="text-sm font-semibold tracking-tight text-main whitespace-nowrap">Later Lane</span>
+    </div>
+
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 opacity-85 hover:opacity-100 transition-opacity">
+      <button type="button" 
+              onclick="window.app.renderAggregatedInsights(); window.app.showScreen('screen-reflection');"
+              class="calm-btn calm-btn-soft px-3 py-1.5 text-xs gap-1.5 whitespace-nowrap"
+              title="View Attention Pattern Map"
+              aria-label="View Attention Pattern Map">
+        <svg class="w-3.5 h-3.5 text-aura shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 18V11m5 7V6m5 12v-5m5 5V9"/>
+        </svg>
+        <span class="hidden sm:inline">Patterns</span>
+      </button>
+
+      <button type="button"
+              id="btn-quick-theme"
+              onclick="window.app.toggleQuickTheme()"
+              class="calm-btn calm-btn-soft px-2.5 py-1.5 text-xs whitespace-nowrap"
+              aria-label="Toggle dark or light theme">
+        <span id="quick-theme-label">Light</span>
+      </button>
+
+      <button type="button"
+              id="btn-install-app"
+              onclick="window.app.triggerInstallApp()"
+              class="calm-btn calm-btn-primary px-3 py-1.5 text-xs whitespace-nowrap gap-1.5"
+              title="Install Later Lane as a standalone app">
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v11m0 0l-4-4m4 4l4-4"/>
+        </svg>
+        <span>Install<span class="hidden sm:inline"> App</span></span>
+      </button>
+
+      <button type="button" 
+              onclick="window.app.openSettingsModal()" 
+              class="calm-btn calm-btn-soft p-2"
+              title="Settings"
+              aria-label="Open settings and audio preferences">
+        <svg class="w-3.5 h-3.5 text-sec" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- RESUME BANNER -->
+  <div id="resume-session-banner" class="hidden mx-auto max-w-lg w-[calc(100%-2rem)] calm-card-sm px-4 py-2.5 text-xs flex items-center justify-between gap-2 mb-2">
+    <div class="flex items-center gap-2 text-main overflow-hidden">
+      <span class="w-2 h-2 rounded-full bg-[#2DD4BF] animate-pulse shrink-0"></span>
+      <span class="text-sec truncate">In progress: <strong id="resume-session-intent" class="font-medium text-main"></strong></span>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button type="button" onclick="window.app.resumeActiveSession()" class="calm-btn calm-btn-primary px-3 py-1 text-[11px]">Resume</button>
+      <button type="button" onclick="window.app.dismissActiveSession()" class="calm-btn calm-btn-soft px-2.5 py-1 text-[11px]">Discard</button>
+    </div>
+  </div>
+
+  <!-- MAIN SANCTUARY CANVAS -->
+  <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 pb-12 pt-4 flex flex-col justify-center">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: SET INTENT (ONE CALM CENTERPIECE)-->
+    <!-- ========================================== -->
+    <section id="screen-intent" class="flex flex-col items-center gap-7 animate-fade-in max-w-lg mx-auto w-full">
+      <div class="text-center flex flex-col items-center gap-2.5">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-teal-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center mb-1">
+          <div class="w-4 h-4 rounded-full bg-gradient-to-tr from-[#0D9488] to-[#2DD4BF] breathing-glow"></div>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-main">
+          What is your single focus?
+        </h2>
+        <p class="text-sec text-sm max-w-sm leading-relaxed">
+          One task, one calm block. Park urges instead of fighting them.
+        </p>
+      </div>
+
+      <!-- One Clean Frosted Glass Card -->
+      <div class="calm-card w-full p-6 sm:p-7 flex flex-col gap-6">
+        <!-- Borderless Intent Prompt -->
+        <div class="pb-4 border-b calm-divider">
+          <input type="text" 
+                 id="input-intent" 
+                 placeholder="e.g. Read Biology Chapter 4..."
+                 aria-label="What is your single focus?"
+                 class="calm-input-plain text-lg sm:text-xl font-medium">
+        </div>
+
+        <!-- Subtle Tag Selector -->
+        <div class="flex flex-wrap items-center gap-1.5" id="tag-chips-container">
+          <button type="button" class="tag-chip calm-chip active px-3 py-1 text-xs" data-tag="Deep Work">Deep Work</button>
+          <button type="button" class="tag-chip calm-chip px-3 py-1 text-xs" data-tag="Study">Study</button>
+          <button type="button" class="tag-chip calm-chip px-3 py-1 text-xs" data-tag="Writing">Writing</button>
+          <button type="button" class="tag-chip calm-chip px-3 py-1 text-xs" data-tag="Assignment">Assignment</button>
+          <button type="button" class="tag-chip calm-chip px-3 py-1 text-xs" data-tag="Coding">Coding</button>
+        </div>
+
+        <!-- Duration Row -->
+        <div class="flex flex-col gap-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-sec">Session length</span>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="input-duration" value="25" min="1" max="120" step="1"
+                     aria-label="Duration in minutes"
+                     class="calm-input w-14 text-center py-1 text-xs font-medium text-aura">
+              <span class="text-mut">min</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" class="duration-pill calm-chip py-2 text-xs font-medium" data-mins="15">15m</button>
+            <button type="button" class="duration-pill calm-chip active py-2 text-xs font-medium" data-mins="25">25m</button>
+            <button type="button" class="duration-pill calm-chip py-2 text-xs font-medium" data-mins="45">45m</button>
+            <button type="button" class="duration-pill calm-chip py-2 text-xs font-medium" data-mins="60">60m</button>
+          </div>
+        </div>
+
+        <!-- Begin Action -->
+        <button type="button" 
+                onclick="window.app.startNewSession()" 
+                class="calm-btn calm-btn-primary w-full py-3.5 text-sm sm:text-base gap-2">
+          <span>Begin Focus</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-5-5m5 5l-5 5"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="text-xs text-mut text-center">
+        Everything stays privately on your device · Works offline
+      </p>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: FOCUS SESSION (BREATHING ORB)    -->
+    <!-- ========================================== -->
+    <section id="screen-focus" class="hidden flex flex-col items-center gap-7 animate-fade-in max-w-lg mx-auto w-full">
+      <!-- Quiet Centered Task Header -->
+      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full calm-card-sm max-w-full">
+        <span class="w-2 h-2 rounded-full bg-[#2DD4BF] shrink-0 breathing-glow"></span>
+        <span id="focus-current-intent" class="text-xs sm:text-sm font-medium text-main truncate">Study Session</span>
+        <span class="text-mut">·</span>
+        <span id="focus-current-tag" class="text-xs text-sec shrink-0">Deep Work</span>
+      </div>
+
+      <!-- Living Concentric Breathing Orb & Timer -->
+      <div class="flex flex-col items-center justify-center relative py-3">
+        <!-- Layered soft breathing aura -->
+        <div id="timer-glow" class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-teal-500/20 via-indigo-500/15 to-amber-500/10 blur-3xl pointer-events-none breathing-glow"></div>
+
+        <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center" id="timer-ring">
+          <svg class="w-full h-full timer-svg" viewBox="0 0 260 260">
+            <defs>
+              <linearGradient id="calmRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#2DD4BF" />
+                <stop offset="100%" stop-color="#818CF8" />
+              </linearGradient>
+            </defs>
+            <circle class="timer-circle-bg" cx="130" cy="130" r="120" stroke-width="2.5" fill="none" />
+            <circle id="timer-circle-progress" class="timer-circle-progress" cx="130" cy="130" r="120" stroke-width="3.5" fill="none"
+                    stroke-dasharray="753.98" stroke-dashoffset="0" />
+          </svg>
+
+          <div class="absolute flex flex-col items-center justify-center text-center">
+            <span id="timer-time-text" aria-live="polite" class="text-6xl sm:text-7xl font-light tracking-tight text-main tabular-nums">
+              25:00
+            </span>
+            <span class="text-xs text-sec mt-2 tracking-wide">
+              Breathe · Stay in flow
+            </span>
+          </div>
+        </div>
+
+        <!-- Subtle Ambient Sound Strip -->
+        <div class="inline-flex items-center gap-1 mt-4 p-1 rounded-full calm-card-sm text-xs">
+          <button type="button" class="ambient-chip calm-chip active px-3 py-1 text-[11px]" data-ambient="none" onclick="window.app.setQuickAmbient('none')">Silent</button>
+          <button type="button" class="ambient-chip calm-chip px-3 py-1 text-[11px]" data-ambient="rain" onclick="window.app.setQuickAmbient('rain')">Rain</button>
+          <button type="button" class="ambient-chip calm-chip px-3 py-1 text-[11px]" data-ambient="brownian" onclick="window.app.setQuickAmbient('brownian')">Waves</button>
+          <button type="button" class="ambient-chip calm-chip px-3 py-1 text-[11px]" data-ambient="drone" onclick="window.app.setQuickAmbient('drone')">432Hz</button>
+        </div>
+      </div>
+
+      <!-- Serene "Park this urge" Centerpiece -->
+      <button type="button" 
+              id="btn-open-park-sheet"
+              onclick="window.app.openParkUrgeSheet()" 
+              class="btn-park-urge w-full py-4 px-5 flex items-center justify-between text-left group">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-full bg-[var(--aura-amber-soft)] border border-amber-400/25 flex items-center justify-center shrink-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#FBBF24] group-hover:scale-125 transition"></span>
+          </div>
+          <div>
+            <span class="text-base font-semibold block text-main">Park this urge</span>
+            <span class="text-xs text-sec">Let the impulse rest here instead of checking your phone</span>
+          </div>
+        </div>
+        <span class="hidden sm:inline text-[11px] font-mono text-mut px-2 py-0.5 rounded-md bg-[var(--bg-glass-soft)]">P</span>
+      </button>
+
+      <!-- Quiet Controls -->
+      <div class="flex items-center justify-center gap-3 text-xs">
+        <button type="button" 
+                id="btn-pause-resume"
+                onclick="window.app.togglePauseResume()" 
+                class="calm-btn calm-btn-soft px-4 py-2 text-xs gap-1.5">
+          <span>Pause</span>
+        </button>
+
+        <button type="button" 
+                onclick="window.app.confirmEndSessionEarly()" 
+                class="calm-btn calm-btn-soft px-4 py-2 text-xs text-sec">
+          Finish &amp; Take Break
+        </button>
+      </div>
+
+      <!-- Quiet Parked Lane Shelf -->
+      <div id="parking-lane-tray" class="parking-lane-tray w-full p-4 flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-sec">Parked in Later Lane</span>
+          <span id="parked-urges-badge" class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[var(--bg-glass-soft)] text-sec">
+            0 parked
+          </span>
+        </div>
+        <div id="parking-lane-items" class="flex flex-col gap-2 max-h-44 overflow-y-auto">
+          <div class="text-xs text-mut py-2 text-center">
+            Your lane is quiet — parked thoughts rest here until your break
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SCREEN 3: PLANNED BREAK & URGE EXPIRY      -->
+    <!-- ========================================== -->
+    <section id="screen-break" class="hidden flex flex-col gap-6 animate-fade-in max-w-xl mx-auto w-full">
+      <div class="text-center flex flex-col items-center gap-1.5">
+        <span class="text-xs font-medium text-aura">Planned Break</span>
+        <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-main">
+          Session complete. Breathe easy.
+        </h2>
+        <p id="break-session-intent" class="text-sec text-sm">
+          Completed 25m of Focus
+        </p>
+      </div>
+
+      <!-- Break Countdown Card -->
+      <div class="calm-card p-6 flex items-center justify-between gap-4">
+        <div>
+          <span class="text-xs text-sec block">Rest timer</span>
+          <div id="break-timer-display" class="text-4xl sm:text-5xl font-light tracking-tight text-main tabular-nums mt-0.5">
+            05:00
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-break-pause" onclick="window.app.toggleBreakPause()" class="calm-btn calm-btn-soft px-4 py-2 text-xs">Pause</button>
+          <button type="button" onclick="window.app.addBreakMinutes(5)" class="calm-btn calm-btn-soft px-3.5 py-2 text-xs">+5m</button>
+        </div>
+      </div>
+
+      <div id="break-finished-alert" class="hidden calm-inset px-4 py-3 text-xs text-aura text-center font-medium">
+        Break finished — start your next focus block whenever you feel ready.
+      </div>
+
+      <!-- Urge Expiry Review -->
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-xs font-medium text-sec">Urge Expiry Review</h3>
+          <span class="text-xs text-mut">Do you still want to check these?</span>
+        </div>
+
+        <div id="urge-expiry-container" class="flex flex-col gap-2.5"></div>
+
+        <div id="expiry-realization-card" aria-live="polite" class="suggestion-card hidden flex flex-col gap-1">
+          <h4 id="expiry-realization-title" class="text-sm font-semibold text-main">Reflect on your parked urges</h4>
+          <p id="expiry-realization-text" class="text-xs text-sec leading-relaxed">
+            Writing down an urge defuses the itch. Mark which ones faded on their own.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 pt-1">
+        <button type="button" 
+                onclick="window.app.finishBreakAndGoToReflection('screen-reflection')" 
+                class="calm-btn calm-btn-primary flex-1 py-3.5 text-sm gap-2">
+          <span>Complete &amp; View Patterns</span>
+        </button>
+
+        <button type="button" 
+                onclick="window.app.finishBreakAndGoToReflection('screen-intent')" 
+                class="calm-btn calm-btn-soft py-3.5 px-5 text-sm">
+          Start Next Session
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SCREEN 4: REFLECTION & PATTERN MAP         -->
+    <!-- ========================================== -->
+    <section id="screen-reflection" class="hidden flex flex-col gap-5 animate-fade-in w-full">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <span class="text-xs font-medium text-aura block mb-1">Attention Insights</span>
+          <h2 class="text-2xl sm:text-3xl font-semibold text-main tracking-tight">
+            Where your attention shifts
+          </h2>
+          <p class="text-sec text-xs sm:text-sm mt-0.5">
+            No guilt, no scores — gentle patterns across your sessions.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <div class="inline-flex calm-card-sm p-1 text-xs gap-1 shrink-0">
+            <button type="button" id="timeframe-weekly" onclick="window.app.setInsightsTimeframe('weekly')" class="whitespace-nowrap px-3 py-1 rounded-xl text-sec hover:text-main font-medium transition">
+              7 Days
+            </button>
+            <button type="button" id="timeframe-all" onclick="window.app.setInsightsTimeframe('all')" class="whitespace-nowrap px-3 py-1 rounded-xl bg-[var(--text-main)] text-[var(--bg-app)] font-medium transition">
+              All Time
+            </button>
+          </div>
+          <button type="button" 
+                  onclick="window.app.showScreen('screen-intent')" 
+                  class="calm-btn calm-btn-primary whitespace-nowrap shrink-0 px-4 py-2 text-xs gap-1.5">
+            <span>New Focus</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Latest Session Card -->
+      <div id="latest-session-summary-card" class="calm-card p-5 hidden flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-medium text-aura">Latest Session</span>
+          <span id="latest-session-tag" class="text-[11px] font-medium px-2.5 py-0.5 rounded-full calm-inset text-sec">Study</span>
+        </div>
+        <p id="latest-session-intent" class="text-base font-semibold text-main"></p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <div class="calm-inset p-3">
+            <span class="text-[11px] text-mut block">Urges Parked</span>
+            <strong id="latest-session-urges" class="text-main font-medium mt-0.5 block">0</strong>
+          </div>
+          <div class="calm-inset p-3">
+            <span class="text-[11px] text-mut block">Top Stuck Signal</span>
+            <strong id="latest-session-reason" class="text-aura font-medium capitalize mt-0.5 block">None</strong>
+          </div>
+          <div class="calm-inset p-3">
+            <span class="text-[11px] text-mut block">Minute Cluster</span>
+            <strong id="latest-session-cluster" class="text-main font-medium mt-0.5 block">—</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Calm Stat Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="calm-card-sm p-4">
+          <span class="text-[11px] text-mut block mb-1">Sessions</span>
+          <span id="stat-total-sessions" class="text-2xl font-semibold text-main tabular-nums">0</span>
+        </div>
+        <div class="calm-card-sm p-4">
+          <span class="text-[11px] text-mut block mb-1">Focus Min</span>
+          <span id="stat-total-minutes" class="text-2xl font-semibold text-main tabular-nums">0</span>
+        </div>
+        <div class="calm-card-sm p-4">
+          <span class="text-[11px] text-mut block mb-1">Urges Parked</span>
+          <span id="stat-total-urges" class="text-2xl font-semibold text-urge tabular-nums">0</span>
+        </div>
+        <div class="calm-card-sm p-4">
+          <span class="text-[11px] text-mut block mb-1">Fade Rate</span>
+          <span id="stat-fade-rate" class="text-2xl font-semibold text-aura tabular-nums">0%</span>
+        </div>
+      </div>
+
+      <!-- Attention Waveform -->
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-4">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-semibold text-main">Attention Waveform</h3>
+            <p class="text-xs text-sec mt-0.5">Session minutes when phone impulses typically surface</p>
+          </div>
+          <span class="text-[11px] px-2.5 py-0.5 rounded-full calm-inset text-mut">By Minute</span>
+        </div>
+
+        <div id="minute-histogram-bars" class="flex items-end gap-2.5 pt-4 pb-2 border-b calm-divider min-h-[156px]"></div>
+      </div>
+
+      <!-- Insights & Triggers -->
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-3">
+        <h3 class="text-xs font-medium text-sec">Gentle Observations</h3>
+        <div id="insights-sentences-list" class="flex flex-col gap-2"></div>
+      </div>
+
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-3">
+        <h3 class="text-sm font-semibold text-main">Stuck Signal Triggers</h3>
+        <div id="reasons-breakdown-badges" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-main">Recent Sessions</h3>
+          <span class="text-[11px] text-mut">Saved locally</span>
+        </div>
+        <div id="history-sessions-list" class="flex flex-col gap-2"></div>
+      </div>
+
+      <!-- Data Privacy Bar -->
+      <div class="calm-inset p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-sec">
+        <span>All sessions stay privately on your device.</span>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.app.loadDemoData()" class="calm-btn calm-btn-soft px-3 py-1.5 text-[11px]">
+            Load Demo Data
+          </button>
+          <button type="button" onclick="window.app.exportData()" class="calm-btn calm-btn-soft px-3 py-1.5 text-[11px]">
+            Export JSON
+          </button>
+          <button type="button" onclick="window.app.promptImportData()" class="calm-btn calm-btn-soft px-3 py-1.5 text-[11px]">
+            Import
+          </button>
+          <button type="button" onclick="window.app.confirmClearData()" class="calm-btn calm-btn-danger px-3 py-1.5 text-[11px]">
+            Clear Data
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: PARK URGE & STUCK SIGNAL SHEET                  -->
+  <!-- ======================================================== -->
+  <div id="park-urge-overlay" role="dialog" aria-modal="true" aria-labelledby="park-modal-title" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div id="park-urge-sheet" class="bottom-sheet-content w-full max-w-lg p-6 flex flex-col gap-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 id="park-modal-title" class="text-lg font-semibold text-main">Park this urge</h3>
+          <p class="text-xs text-sec mt-0.5">Write it down and release the itch</p>
+        </div>
+        <button type="button" aria-label="Close park urge sheet" onclick="window.app.closeParkUrgeSheet()" class="calm-btn calm-btn-soft p-2 rounded-full">
+          <svg class="w-4 h-4 text-sec" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div>
+        <input type="text" 
+               id="input-urge-text" 
+               placeholder="What do you want to check? (e.g. Reply to Rahul)"
+               aria-labelledby="park-modal-title"
+               class="calm-input px-4 py-3 text-sm sm:text-base">
+        
+        <div class="flex flex-wrap gap-1.5 mt-2.5">
+          <button type="button" class="quick-urge-pill calm-chip px-3 py-1 text-[11px]" data-text="Check Instagram">Check Instagram</button>
+          <button type="button" class="quick-urge-pill calm-chip px-3 py-1 text-[11px]" data-text="Reply to text message">Reply to text</button>
+          <button type="button" class="quick-urge-pill calm-chip px-3 py-1 text-[11px]" data-text="Look up random question">Random lookup</button>
+          <button type="button" class="quick-urge-pill calm-chip px-3 py-1 text-[11px]" data-text="Check notifications">Notifications</button>
+        </div>
+      </div>
+
+      <div>
+        <span class="text-xs font-medium text-sec block mb-2.5">What triggered this? (Optional)</span>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <button type="button" class="reason-chip calm-chip px-3 py-2 text-xs font-medium" data-reason="confusing" onclick="window.app.selectReason('confusing')">Confusing</button>
+          <button type="button" class="reason-chip calm-chip px-3 py-2 text-xs font-medium" data-reason="bored" onclick="window.app.selectReason('bored')">Bored</button>
+          <button type="button" class="reason-chip calm-chip px-3 py-2 text-xs font-medium" data-reason="tired" onclick="window.app.selectReason('tired')">Tired</button>
+          <button type="button" class="reason-chip calm-chip px-3 py-2 text-xs font-medium" data-reason="anxious" onclick="window.app.selectReason('anxious')">Anxious</button>
+          <button type="button" class="reason-chip calm-chip px-3 py-2 text-xs font-medium" data-reason="habit" onclick="window.app.selectReason('habit')">Just Habit</button>
+        </div>
+      </div>
+
+      <div id="stuck-signal-suggestion" aria-live="polite" class="suggestion-card hidden flex flex-col gap-1">
+        <h4 id="suggestion-title" class="text-xs font-semibold text-main">Strategy</h4>
+        <p id="suggestion-text" class="text-xs text-sec leading-relaxed"></p>
+        <div id="suggestion-action-area"></div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+        <button type="button" onclick="window.app.submitParkUrge(false)" class="calm-btn calm-btn-primary flex-1 py-3 text-sm">
+          Park Urge &amp; Return
+        </button>
+        <button type="button" onclick="window.app.submitParkUrge(true)" class="calm-btn calm-btn-soft py-3 px-4 text-xs text-sec">
+          Quick Park
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: 30-SECOND GUIDED BOX BREATHING                  -->
+  <!-- ======================================================== -->
+  <div id="box-breathing-modal" role="dialog" aria-modal="true" aria-labelledby="breath-modal-title" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="calm-card w-full max-w-sm p-7 flex flex-col items-center text-center gap-5">
+      <div>
+        <span class="text-xs font-medium text-aura block mb-1">Box Breathing</span>
+        <h3 id="breath-modal-title" class="text-base font-semibold text-main">Ground Your Attention</h3>
+      </div>
+
+      <div class="w-36 h-36 rounded-full border calm-divider flex items-center justify-center relative my-2">
+        <div id="box-breath-ring" class="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0D9488] to-[#818CF8] shadow-lg shadow-teal-500/25 flex items-center justify-center transition-transform">
+          <span class="w-2.5 h-2.5 bg-white/90 rounded-full"></span>
+        </div>
+      </div>
+
+      <div id="box-breath-phase" aria-live="polite" class="text-xs font-medium text-sec">
+        Inhale gently (4s)
+      </div>
+
+      <button type="button" onclick="window.app.closeBoxBreathModal()" class="calm-btn calm-btn-soft w-full py-2.5 text-xs">
+        I Feel Centered · Back to Lane
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 3: SETTINGS                                        -->
+  <!-- ======================================================== -->
+  <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="calm-card w-full max-w-md p-6 flex flex-col gap-5">
+      <div class="flex items-center justify-between pb-3 border-b calm-divider">
+        <h3 id="settings-modal-title" class="text-base font-semibold text-main">Preferences</h3>
+        <button type="button" aria-label="Close settings modal" onclick="window.app.closeSettingsModal()" class="calm-btn calm-btn-soft p-2 rounded-full">
+          <svg class="w-4 h-4 text-sec" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-4 text-xs">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label for="setting-sound-toggle" class="font-medium text-main block cursor-pointer">Gentle Sound Chimes</label>
+            <span class="text-sec">Soft tones on session start, park, and break</span>
+          </div>
+          <input type="checkbox" id="setting-sound-toggle" class="w-4 h-4 accent-[#2DD4BF] rounded">
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label for="setting-motion-toggle" class="font-medium text-main block cursor-pointer">Reduced Motion</label>
+            <span class="text-sec">Disables breathing orb and transitions</span>
+          </div>
+          <input type="checkbox" id="setting-motion-toggle" class="w-4 h-4 accent-[#2DD4BF] rounded">
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label for="setting-theme-select" class="font-medium text-main block">Theme</label>
+            <span class="text-sec">Midnight Sanctuary or Morning Mist</span>
+          </div>
+          <select id="setting-theme-select" class="calm-input w-auto px-3 py-1.5 text-xs font-medium">
+            <option value="dark">Midnight (Dark)</option>
+            <option value="light">Morning Mist (Light)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label for="setting-ambient-select" class="font-medium text-main block">Default Ambient Audio</label>
+            <span class="text-sec">Offline synthesizer</span>
+          </div>
+          <select id="setting-ambient-select" class="calm-input w-auto px-3 py-1.5 text-xs font-medium">
+            <option value="none">Silent</option>
+            <option value="rain">Rain</option>
+            <option value="brownian">Waves</option>
+            <option value="drone">432Hz Drone</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <label for="setting-default-duration" class="font-medium text-main block">Default Focus Duration</label>
+            <span class="text-sec">Minutes per session</span>
+          </div>
+          <input type="number" id="setting-default-duration" value="25" min="1" max="120" step="1" class="calm-input w-16 text-center py-1 font-medium">
+        </div>
+      </div>
+
+      <button type="button" onclick="window.app.saveSettingsFromModal()" class="calm-btn calm-btn-primary w-full py-2.5 text-xs">
+        Save Preferences
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 4: INSTALL AS STANDALONE APP GUIDE                 -->
+  <!-- ======================================================== -->
+  <div id="install-help-modal" role="dialog" aria-modal="true" aria-labelledby="install-modal-title" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="calm-card w-full max-w-md p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between pb-3 border-b calm-divider">
+        <h3 id="install-modal-title" class="text-base font-semibold text-main">Install Later Lane</h3>
+        <button type="button" aria-label="Close install guide" onclick="window.app.closeInstallHelpModal()" class="calm-btn calm-btn-soft p-2 rounded-full">
+          <svg class="w-4 h-4 text-sec" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="text-xs text-sec leading-relaxed" id="install-help-desc">
+        Install Later Lane as a dedicated offline app without browser tabs or URL bars.
+      </p>
+
+      <div class="flex flex-col gap-2 text-xs text-sec">
+        <div class="calm-inset p-3.5">
+          <strong class="text-main font-medium block mb-1">Desktop (Chrome / Edge)</strong>
+          Click the <strong>Install icon</strong> in the right side of the address bar, or open menu (⋮) → <strong>"Install Later Lane"</strong>.
+        </div>
+        <div class="calm-inset p-3.5">
+          <strong class="text-main font-medium block mb-1">Android (Chrome / Brave)</strong>
+          Tap menu (⋮) → <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.
+        </div>
+        <div class="calm-inset p-3.5">
+          <strong class="text-main font-medium block mb-1">iOS (Safari)</strong>
+          Tap <strong>Share</strong> → <strong>"Add to Home Screen"</strong>.
+        </div>
+      </div>
+
+      <button type="button" onclick="window.app.closeInstallHelpModal()" class="calm-btn calm-btn-soft w-full py-2.5 text-xs">
+        Got it
+      </button>
+    </div>
+  </div>
+
+  <!-- APPLICATION SCRIPTS -->
+  <script src="js/audio.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

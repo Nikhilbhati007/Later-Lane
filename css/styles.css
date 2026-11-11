@@ -1,0 +1,422 @@
+/**
+ * Later Lane - Serene Sanctuary Design System (Opal / Calm / Apple Focus)
+ * Atmospheric twilight canvas, smoky frosted glass, single-centerpiece layout, gentle breathing aura.
+ */
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Default: Midnight Sanctuary (Dark) */
+  --bg-app: #07090F;
+  --bg-aurora:
+    radial-gradient(circle at 50% 18%, rgba(45, 212, 191, 0.11) 0%, transparent 48%),
+    radial-gradient(circle at 22% 75%, rgba(99, 102, 241, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(251, 191, 36, 0.05) 0%, transparent 42%);
+  --bg-glass: rgba(255, 255, 255, 0.036);
+  --bg-glass-solid: #10131C;
+  --bg-glass-soft: rgba(255, 255, 255, 0.045);
+  --bg-glass-hover: rgba(255, 255, 255, 0.075);
+
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(45, 212, 191, 0.35);
+
+  --text-main: #F4F5F7;
+  --text-sec: #9CA3AF;
+  --text-mut: #6B7280;
+
+  --aura-teal: #2DD4BF;
+  --aura-indigo: #818CF8;
+  --aura-amber: #FBBF24;
+  --aura-soft: rgba(45, 212, 191, 0.10);
+  --aura-amber-soft: rgba(251, 191, 36, 0.12);
+
+  --shadow-sanctuary: 0 28px 70px -20px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-pill: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
+  /* Soft Morning Mist (Light) */
+  --bg-app: #F3F5F8;
+  --bg-aurora:
+    radial-gradient(circle at 50% 18%, rgba(20, 184, 166, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 20% 75%, rgba(99, 102, 241, 0.09) 0%, transparent 48%),
+    radial-gradient(circle at 82% 70%, rgba(245, 158, 11, 0.07) 0%, transparent 44%);
+  --bg-glass: rgba(255, 255, 255, 0.74);
+  --bg-glass-solid: #FFFFFF;
+  --bg-glass-soft: rgba(15, 23, 42, 0.035);
+  --bg-glass-hover: rgba(15, 23, 42, 0.06);
+
+  --border-soft: rgba(15, 23, 42, 0.08);
+  --border-glow: rgba(13, 148, 136, 0.35);
+
+  --text-main: #111827;
+  --text-sec: #4B5563;
+  --text-mut: #9CA3AF;
+
+  --aura-teal: #0D9488;
+  --aura-indigo: #6366F1;
+  --aura-amber: #D97706;
+  --aura-soft: rgba(13, 148, 136, 0.10);
+  --aura-amber-soft: rgba(217, 119, 6, 0.10);
+
+  --shadow-sanctuary: 0 24px 60px -18px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-pill: 0 8px 24px -8px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  background-image: var(--bg-aurora);
+  background-attachment: fixed;
+  color: var(--text-main);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
+/* Serene Frosted Surfaces */
+.calm-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--border-soft);
+  border-radius: 24px;
+  box-shadow: var(--shadow-sanctuary);
+}
+
+.calm-card-sm {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  box-shadow: var(--shadow-pill);
+}
+
+.calm-inset {
+  background: var(--bg-glass-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+}
+
+.calm-divider {
+  border-color: var(--border-soft);
+}
+
+/* Text Helpers */
+.text-main {
+  color: var(--text-main);
+}
+
+.text-sec {
+  color: var(--text-sec);
+}
+
+.text-mut {
+  color: var(--text-mut);
+}
+
+.text-aura {
+  color: var(--aura-teal);
+}
+
+.text-urge {
+  color: var(--aura-amber);
+}
+
+/* Minimal Floating Pills & Buttons */
+.calm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.calm-btn-primary {
+  background: linear-gradient(135deg, #2DD4BF 0%, #0D9488 100%);
+  color: #042F2E;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 30px -8px rgba(45, 212, 191, 0.45);
+}
+
+[data-theme="light"] .calm-btn-primary {
+  background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+  color: #FFFFFF;
+}
+
+.calm-btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 16px 36px -8px rgba(45, 212, 191, 0.55);
+}
+
+.calm-btn-primary:active {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+.calm-btn-soft {
+  background: var(--bg-glass-soft);
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+}
+
+.calm-btn-soft:hover {
+  background: var(--bg-glass-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="light"] .calm-btn-soft:hover {
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.calm-btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="light"] .calm-btn-danger {
+  color: #DC2626;
+}
+
+/* Soft Pill Inputs */
+.calm-input-plain {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  outline: none;
+}
+
+.calm-input-plain::placeholder {
+  color: var(--text-mut);
+}
+
+.calm-input {
+  width: 100%;
+  background: var(--bg-glass-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text-main);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.calm-input::placeholder {
+  color: var(--text-mut);
+}
+
+.calm-input:focus {
+  outline: none;
+  border-color: var(--border-glow);
+}
+
+/* Whisper-quiet Chips */
+.calm-chip {
+  background: var(--bg-glass-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text-sec);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.calm-chip:hover {
+  background: var(--bg-glass-hover);
+  color: var(--text-main);
+}
+
+.calm-chip.active,
+.tag-chip.active,
+.duration-pill.active,
+.ambient-chip.active {
+  background: var(--text-main);
+  color: var(--bg-app);
+  border-color: var(--text-main);
+  font-weight: 600;
+}
+
+.reason-chip.active {
+  background: var(--aura-soft);
+  color: var(--aura-teal);
+  border-color: var(--border-glow);
+  font-weight: 600;
+}
+
+/* Meditative "Park This Urge" Centerpiece */
+.btn-park-urge {
+  background: var(--bg-glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  box-shadow: var(--shadow-pill);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-park-urge:hover {
+  background: var(--bg-glass-hover);
+  border-color: rgba(251, 191, 36, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px -12px rgba(251, 191, 36, 0.16);
+}
+
+.btn-park-urge:active {
+  transform: scale(0.985);
+}
+
+/* Breathing Timer Ring & Living Orb */
+.timer-svg {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.timer-circle-bg {
+  stroke: var(--border-soft);
+}
+
+.timer-circle-progress {
+  stroke: url(#calmRingGrad);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.85s linear;
+  filter: drop-shadow(0 0 14px rgba(45, 212, 191, 0.35));
+}
+
+/* Breathing Ambient Aura Animation (4s Inhale / 4s Exhale) */
+@keyframes calmBreathe {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.88;
+  }
+}
+
+.breathing-glow {
+  animation: calmBreathe 8s infinite ease-in-out;
+}
+
+/* Quiet Parked Tray */
+.parking-lane-tray {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  min-height: 70px;
+}
+
+.parked-urge-pill {
+  background: var(--bg-glass-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  transition: background-color 0.18s ease;
+}
+
+/* Empathetic Advice Card */
+.suggestion-card {
+  background: var(--aura-soft);
+  border: 1px solid var(--border-glow);
+  border-radius: 16px;
+  padding: 1rem 1.15rem;
+}
+
+/* Soft Modal Sheet */
+.bottom-sheet-content {
+  background: var(--bg-glass-solid);
+  border: 1px solid var(--border-soft);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--shadow-sanctuary);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .bottom-sheet-content {
+    border-radius: 24px;
+    border-bottom: 1px solid var(--border-soft);
+    max-height: 85vh;
+  }
+}
+
+/* Expiry Review States */
+.expiry-btn-faded-active {
+  background: var(--aura-soft) !important;
+  color: var(--aura-teal) !important;
+  border-color: var(--border-glow) !important;
+  font-weight: 600;
+}
+
+.expiry-btn-wanted-active {
+  background: var(--aura-amber-soft) !important;
+  color: var(--aura-amber) !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  font-weight: 600;
+}
+
+/* Soft Fade */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Soft Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-soft);
+  border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathing-glow, .animate-fade-in {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--aura-teal);
+  outline-offset: 2px;
+}

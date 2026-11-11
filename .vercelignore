@@ -1,0 +1,5 @@
+*.docx
+docs/
+README.md
+.git/
+

@@ -6,11 +6,19 @@
 class LaterLaneApp {
   constructor() {
     this.storage = window.laneStorage;
+    this.cloud = window.laneCloud;
     this.sound = window.soundEngine;
     this.animations = window.laneAnimations;
 
+    // Auth & Route Protection State
+    this.currentUser = null;
+    this.authReady = false;
+    this.isSyncing = false;
+    this.authUnsubscribe = null;
+    this.protectedScreens = new Set(['screen-intent', 'screen-focus', 'screen-break', 'screen-reflection']);
+
     // State
-    this.currentScreen = 'screen-intent';
+    this.currentScreen = 'screen-loading';
     this.activeSession = null;
     this.sessionTimerInterval = null;
     this.breakTimerInterval = null;
@@ -33,14 +41,278 @@ class LaterLaneApp {
     this.applySettings();
     this.bindEvents();
     this.setupPWAInstall();
-    this.checkActiveSession();
-    this.renderAggregatedInsights();
+
+    if (this.cloud) {
+      this.cloud.onSyncStatusChange = (state) => this.updateSyncStatusUI(state);
+    }
+
+    window.addEventListener('online', () => {
+      if (this.currentUser) {
+        this.syncCloudAccountData();
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      if (this.currentUser) {
+        this.updateSyncStatusUI('offline');
+      }
+    });
 
     // Register service worker if available
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => {
         console.log('SW registration note:', err);
       });
+    }
+
+    this.bootAuth();
+  }
+
+  async bootAuth() {
+    if (!this.cloud) {
+      this.authReady = true;
+      this.handleSignedOut('Cloud auth service is unavailable.');
+      return;
+    }
+
+    this.authUnsubscribe = this.cloud.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        if (this.authReady) {
+          this.handleSignedOut();
+        }
+        return;
+      }
+
+      if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')) {
+        await this.handleSignedIn(session.user);
+      }
+    });
+
+    const { user, error } = await this.cloud.resolveSession();
+    this.authReady = true;
+
+    if (user) {
+      await this.handleSignedIn(user);
+    } else {
+      this.handleSignedOut(error);
+    }
+  }
+
+  async handleSignedIn(user) {
+    const isNewSignIn = this.currentUser?.id !== user.id;
+    this.currentUser = user;
+    this.storage.setActiveUser(user.id);
+    this.updateUserProfileUI(user);
+    this.applySettings();
+
+    document.getElementById('screen-loading')?.classList.add('hidden');
+    document.getElementById('screen-auth')?.classList.add('hidden');
+    document.getElementById('header-protected-controls')?.classList.remove('hidden');
+    this.setAuthBanner(null);
+
+    if (isNewSignIn) {
+      this.checkActiveSession();
+      this.renderAggregatedInsights();
+
+      if (this.currentScreen === 'screen-loading' || this.currentScreen === 'screen-auth') {
+        this.showScreen('screen-intent');
+      }
+
+      this.syncCloudAccountData();
+    }
+  }
+
+  handleSignedOut(errorMessage = null) {
+    clearInterval(this.sessionTimerInterval);
+    clearInterval(this.breakTimerInterval);
+    this.sessionTimerInterval = null;
+    this.breakTimerInterval = null;
+    this.sound.setAmbient('none');
+    this.activeSession = null;
+    this.currentUser = null;
+    this.storage.setActiveUser(null);
+
+    document.title = 'Later Lane — Focus & Urge Parking';
+    document.getElementById('screen-loading')?.classList.add('hidden');
+    document.getElementById('header-protected-controls')?.classList.add('hidden');
+    document.getElementById('resume-session-banner')?.classList.add('hidden');
+    this.closeUserMenu();
+    this.closeParkUrgeSheet();
+    this.closeBoxBreathModal();
+    this.closeSettingsModal();
+
+    // Hide every protected screen explicitly
+    this.protectedScreens.forEach((id) => {
+      document.getElementById(id)?.classList.add('hidden');
+    });
+
+    const googleBtn = document.getElementById('btn-google-signin');
+    const googleLabel = document.getElementById('google-signin-label');
+    if (googleBtn) googleBtn.disabled = false;
+    if (googleLabel) googleLabel.textContent = 'Continue with Google';
+
+    this.currentScreen = 'screen-auth';
+    const authEl = document.getElementById('screen-auth');
+    if (authEl) authEl.classList.remove('hidden');
+    this.setAuthBanner(errorMessage);
+  }
+
+  setAuthBanner(message) {
+    const banner = document.getElementById('auth-status-banner');
+    if (!banner) return;
+    if (message) {
+      banner.textContent = message;
+      banner.classList.remove('hidden');
+    } else {
+      banner.textContent = '';
+      banner.classList.add('hidden');
+    }
+  }
+
+  updateUserProfileUI(user) {
+    if (!user) return;
+    const meta = user.user_metadata || {};
+    const fullName = meta.full_name || meta.name || user.email?.split('@')[0] || 'Focus User';
+    const email = user.email || '';
+    const avatarUrl = meta.avatar_url || meta.picture || '';
+    const initial = (fullName.trim()[0] || 'U').toUpperCase();
+
+    const avatarImg = document.getElementById('header-user-avatar');
+    const initialEl = document.getElementById('header-user-initial');
+    if (avatarImg && initialEl) {
+      if (avatarUrl) {
+        avatarImg.src = avatarUrl;
+        avatarImg.alt = fullName;
+        avatarImg.classList.remove('hidden');
+        initialEl.classList.add('hidden');
+      } else {
+        avatarImg.classList.add('hidden');
+        initialEl.textContent = initial;
+        initialEl.classList.remove('hidden');
+      }
+    }
+
+    const headerNameEl = document.getElementById('header-user-name');
+    if (headerNameEl) headerNameEl.textContent = fullName.split(' ')[0];
+
+    const menuNameEl = document.getElementById('user-menu-name');
+    if (menuNameEl) menuNameEl.textContent = fullName;
+
+    const menuEmailEl = document.getElementById('user-menu-email');
+    if (menuEmailEl) menuEmailEl.textContent = email;
+
+    const settingsEmailEl = document.getElementById('settings-account-email');
+    if (settingsEmailEl) settingsEmailEl.textContent = email || fullName;
+  }
+
+  updateSyncStatusUI(state) {
+    const textMap = {
+      idle: 'Synced with Google account',
+      syncing: 'Syncing across devices…',
+      synced: 'Synced with cloud',
+      offline: 'Offline mode · will sync online',
+      error: 'Sync paused · saved locally'
+    };
+    const label = textMap[state] || textMap.idle;
+    const menuSync = document.getElementById('user-menu-sync-label');
+    if (menuSync) menuSync.textContent = label;
+    const badge = document.getElementById('reflection-sync-badge');
+    if (badge) badge.textContent = label;
+    const footerStatus = document.getElementById('insights-sync-status');
+    if (footerStatus) {
+      footerStatus.textContent = state === 'offline'
+        ? 'Offline mode — new sessions are saved safely and will sync when back online.'
+        : 'Synced privately to your Google account via Supabase.';
+    }
+  }
+
+  async signInWithGoogle() {
+    const googleBtn = document.getElementById('btn-google-signin');
+    const googleLabel = document.getElementById('google-signin-label');
+    this.setAuthBanner(null);
+
+    if (googleBtn) googleBtn.disabled = true;
+    if (googleLabel) googleLabel.textContent = 'Connecting to Google…';
+
+    try {
+      await this.cloud.signInWithGoogle();
+    } catch (err) {
+      if (googleBtn) googleBtn.disabled = false;
+      if (googleLabel) googleLabel.textContent = 'Continue with Google';
+      this.setAuthBanner(err?.message || 'Unable to start Google sign-in right now.');
+    }
+  }
+
+  async signOutUser() {
+    this.closeUserMenu();
+    await this.cloud?.signOut();
+    this.handleSignedOut();
+  }
+
+  toggleUserMenu() {
+    if (!this.currentUser) return;
+    document.getElementById('user-menu-dropdown')?.classList.toggle('hidden');
+  }
+
+  closeUserMenu() {
+    document.getElementById('user-menu-dropdown')?.classList.add('hidden');
+  }
+
+  handleBrandClick() {
+    if (!this.currentUser) {
+      this.showScreen('screen-auth');
+      return;
+    }
+    this.showScreen('screen-intent');
+  }
+
+  openPatternsScreen() {
+    if (!this.currentUser) {
+      this.showScreen('screen-auth');
+      return;
+    }
+    this.closeUserMenu();
+    this.renderAggregatedInsights();
+    this.showScreen('screen-reflection');
+  }
+
+  async syncCloudAccountData() {
+    if (!this.cloud || !this.currentUser || this.isSyncing) return;
+    this.isSyncing = true;
+    try {
+      const localSessions = this.storage.getHistory();
+      const legacySessions = this.storage.getLegacyHistory();
+      const result = await this.cloud.syncAccountData(localSessions, this.storage.settings, legacySessions);
+      if (result.ok) {
+        if (legacySessions.length > 0) {
+          this.storage.clearLegacyHistory();
+        }
+        this.storage.setPendingCloudSync(false);
+        this.storage.replaceHistory(result.sessions);
+        if (result.settings && typeof result.settings === 'object') {
+          this.storage.saveSettings({ ...this.storage.settings, ...result.settings, uiVersion: 4 });
+          this.applySettings();
+        }
+        this.renderAggregatedInsights();
+      } else {
+        this.storage.setPendingCloudSync(true);
+      }
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
+  async manualSyncNow() {
+    this.closeUserMenu();
+    await this.syncCloudAccountData();
+  }
+
+  async syncSessionsToCloud(sessions) {
+    if (!this.cloud || !this.currentUser || !sessions?.length) return;
+    this.storage.setPendingCloudSync(true);
+    const res = await this.cloud.upsertSessions(sessions);
+    if (res.ok) {
+      this.storage.setPendingCloudSync(false);
     }
   }
 
@@ -90,13 +362,23 @@ class LaterLaneApp {
     const next = (this.storage.settings.theme || 'dark') === 'dark' ? 'light' : 'dark';
     this.storage.saveSettings({ theme: next });
     this.applySettings();
+    if (this.currentUser) {
+      this.cloud?.upsertSettings(this.storage.settings);
+    }
   }
 
   showScreen(screenId) {
+    // Protected route enforcement: never display app routes without an authenticated user
+    if (this.protectedScreens.has(screenId) && !this.currentUser) {
+      screenId = 'screen-auth';
+    } else if (screenId === 'screen-auth' && this.currentUser) {
+      screenId = 'screen-intent';
+    }
+
     const oldScreenEl = document.getElementById(this.currentScreen);
     const newScreenEl = document.getElementById(screenId);
 
-    if (oldScreenEl === newScreenEl) return;
+    if (!newScreenEl || oldScreenEl === newScreenEl) return;
 
     this.animations.transitionScreens(oldScreenEl, newScreenEl, () => {
       this.currentScreen = screenId;
@@ -106,6 +388,7 @@ class LaterLaneApp {
 
   // Check if a session was in progress (e.g., page refresh)
   checkActiveSession() {
+    if (!this.currentUser) return;
     const saved = this.storage.getCurrentSession();
     if (saved && saved.secondsRemaining > 0) {
       this.activeSession = saved;
@@ -119,7 +402,7 @@ class LaterLaneApp {
   }
 
   resumeActiveSession() {
-    if (!this.activeSession) return;
+    if (!this.currentUser || !this.activeSession) return;
     document.getElementById('resume-session-banner')?.classList.add('hidden');
     this.setupFocusScreenUI();
     this.showScreen('screen-focus');
@@ -134,6 +417,10 @@ class LaterLaneApp {
 
   // --- START NEW SESSION ---
   startNewSession() {
+    if (!this.currentUser) {
+      this.showScreen('screen-auth');
+      return;
+    }
     const intentInput = document.getElementById('input-intent');
     const intent = intentInput?.value.trim() || 'Focus Session';
     const durationMins = parseInt(document.getElementById('input-duration')?.value || '25', 10);
@@ -610,6 +897,7 @@ class LaterLaneApp {
 
       this.storage.saveCompletedSession(completedSession);
       this.activeSession = null;
+      this.syncSessionsToCloud([completedSession]);
     }
 
     document.title = 'Later Lane — Focus & Urge Parking';
@@ -820,6 +1108,7 @@ class LaterLaneApp {
   }
 
   promptImportData() {
+    if (!this.currentUser) return;
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -830,6 +1119,8 @@ class LaterLaneApp {
       reader.onload = (event) => {
         const success = this.storage.importAllData(event.target.result);
         if (success) {
+          this.syncSessionsToCloud(this.storage.getHistory());
+          this.cloud?.upsertSettings(this.storage.settings);
           alert('Data imported successfully!');
           this.renderAggregatedInsights();
         } else {
@@ -896,12 +1187,15 @@ class LaterLaneApp {
     ];
 
     demoSessions.forEach(s => this.storage.saveCompletedSession(s));
+    this.syncSessionsToCloud(demoSessions);
     this.renderAggregatedInsights();
   }
 
   confirmClearData() {
+    if (!this.currentUser) return;
     if (confirm('Clear all your past sessions and stats? This cannot be undone.')) {
       this.storage.clearAllData();
+      this.cloud?.clearCloudSessions();
       this.renderAggregatedInsights();
       alert('Data cleared.');
     }
@@ -913,12 +1207,15 @@ class LaterLaneApp {
     window.addEventListener('keydown', (e) => {
       // If modal is open, Esc closes it
       if (e.key === 'Escape') {
+        this.closeUserMenu();
         this.closeParkUrgeSheet();
         this.closeBoxBreathModal();
         this.closeSettingsModal();
         this.closeInstallHelpModal();
         return;
       }
+
+      if (!this.currentUser) return;
 
       const parkSheetOpen = !document.getElementById('park-urge-overlay')?.classList.contains('hidden');
       const activeTag = document.activeElement?.tagName;
@@ -1004,9 +1301,25 @@ class LaterLaneApp {
         }
       });
     });
+
+    // Close user menu popover when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('user-menu-dropdown');
+      const btn = document.getElementById('btn-user-account');
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+          this.closeUserMenu();
+        }
+      }
+    });
   }
 
   openSettingsModal() {
+    if (!this.currentUser) {
+      this.showScreen('screen-auth');
+      return;
+    }
+    this.closeUserMenu();
     document.getElementById('settings-modal')?.classList.remove('hidden');
   }
 
@@ -1029,6 +1342,10 @@ class LaterLaneApp {
       defaultDuration
     });
 
+    if (this.currentUser) {
+      this.cloud?.upsertSettings(this.storage.settings);
+    }
+
     this.applySettings();
     this.closeSettingsModal();
   }
@@ -1036,6 +1353,9 @@ class LaterLaneApp {
   setQuickAmbient(type) {
     this.sound.setAmbient(type);
     this.storage.saveSettings({ ambientSound: type });
+    if (this.currentUser) {
+      this.cloud?.upsertSettings(this.storage.settings);
+    }
     document.querySelectorAll('.ambient-chip').forEach(c => {
       c.classList.toggle('active', c.dataset.ambient === type);
     });

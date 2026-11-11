@@ -1,5 +1,6 @@
 *.docx
 docs/
+supabase/
 README.md
 .git/
 

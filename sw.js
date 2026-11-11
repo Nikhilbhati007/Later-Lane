@@ -3,13 +3,14 @@
  * Ensures 100% offline functionality while keeping app files fresh when online.
  */
 
-const CACHE_NAME = 'laterlane-v4.0.1';
+const CACHE_NAME = 'laterlane-v5.0.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './css/styles.css',
   './js/audio.js',
   './js/storage.js',
+  './js/cloud-sync.js',
   './js/animations.js',
   './js/app.js',
   './manifest.json',
@@ -44,6 +45,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+  if (url.hostname.endsWith('.supabase.co')) return;
   const isSameOrigin = url.origin === self.location.origin;
 
   // Network-first with cache fallback for same-origin app shell & code files

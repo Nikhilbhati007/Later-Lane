@@ -420,3 +420,46 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   outline: 2px solid var(--aura-teal);
   outline-offset: 2px;
 }
+
+/* Google Sign-In Button */
+.google-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: 14px;
+  background: #FFFFFF;
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.92rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+.google-auth-btn:hover {
+  transform: translateY(-1px);
+  background: #F9FAFB;
+  box-shadow: 0 16px 34px -10px rgba(45, 212, 191, 0.32);
+}
+
+.google-auth-btn:active {
+  transform: scale(0.985);
+}
+
+.google-auth-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* User Account Popover Menu */
+.user-menu-popover {
+  background: var(--bg-glass-solid);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sanctuary);
+}

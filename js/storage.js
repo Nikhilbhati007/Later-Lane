@@ -21,18 +21,29 @@ const DEFAULT_SETTINGS = {
 
 class LaterLaneStorage {
   constructor() {
+    this.activeUserId = null;
     this.settings = this.loadSettings();
   }
 
-  // Settings
+  getKey(baseKey) {
+    return this.activeUserId ? `${baseKey}_${this.activeUserId}` : baseKey;
+  }
+
+  setActiveUser(userId) {
+    this.activeUserId = userId || null;
+    this.settings = this.loadSettings();
+  }
+
+  // Settings (theme preference remains visible on login screen too)
   loadSettings() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      const userKey = this.getKey(STORAGE_KEYS.SETTINGS);
+      const raw = localStorage.getItem(userKey) || localStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (!raw) return { ...DEFAULT_SETTINGS };
       const parsed = JSON.parse(raw);
       if (!parsed.uiVersion || parsed.uiVersion < 4) {
         const migrated = { ...DEFAULT_SETTINGS, ...parsed, theme: 'dark', uiVersion: 4 };
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(migrated));
+        localStorage.setItem(userKey, JSON.stringify(migrated));
         return migrated;
       }
       return { ...DEFAULT_SETTINGS, ...parsed };
@@ -45,17 +56,22 @@ class LaterLaneStorage {
   saveSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
     try {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings));
+      const payload = JSON.stringify(this.settings);
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, payload);
+      if (this.activeUserId) {
+        localStorage.setItem(this.getKey(STORAGE_KEYS.SETTINGS), payload);
+      }
     } catch (e) {
       console.error('Failed to save settings', e);
     }
     return this.settings;
   }
 
-  // Active Session Persistence (survives accidental page reload)
+  // Active Session Persistence (strictly isolated to authenticated user)
   getCurrentSession() {
+    if (!this.activeUserId) return null;
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION);
+      const raw = localStorage.getItem(this.getKey(STORAGE_KEYS.CURRENT_SESSION));
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
@@ -63,11 +79,13 @@ class LaterLaneStorage {
   }
 
   saveCurrentSession(session) {
+    if (!this.activeUserId) return;
     try {
+      const key = this.getKey(STORAGE_KEYS.CURRENT_SESSION);
       if (session) {
-        localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, JSON.stringify(session));
+        localStorage.setItem(key, JSON.stringify(session));
       } else {
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+        localStorage.removeItem(key);
       }
     } catch (e) {
       console.error('Failed to save current session', e);
@@ -75,13 +93,24 @@ class LaterLaneStorage {
   }
 
   clearCurrentSession() {
+    if (!this.activeUserId) return;
     try {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+      localStorage.removeItem(this.getKey(STORAGE_KEYS.CURRENT_SESSION));
     } catch (e) {}
   }
 
-  // History & Completed Sessions
+  // History & Completed Sessions (strictly isolated per signed-in user)
   getHistory() {
+    if (!this.activeUserId) return [];
+    try {
+      const raw = localStorage.getItem(this.getKey(STORAGE_KEYS.HISTORY));
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  getLegacyHistory() {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.HISTORY);
       return raw ? JSON.parse(raw) : [];
@@ -90,12 +119,34 @@ class LaterLaneStorage {
     }
   }
 
-  saveCompletedSession(session) {
-    const history = this.getHistory();
-    // Add to beginning of history
-    history.unshift(session);
+  clearLegacyHistory() {
     try {
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+    } catch (e) {}
+  }
+
+  replaceHistory(sessions) {
+    if (!this.activeUserId || !Array.isArray(sessions)) return [];
+    try {
+      localStorage.setItem(this.getKey(STORAGE_KEYS.HISTORY), JSON.stringify(sessions));
+    } catch (e) {
+      console.error('Failed to replace history cache', e);
+    }
+    return sessions;
+  }
+
+  saveCompletedSession(session) {
+    if (!this.activeUserId) return [];
+    const history = this.getHistory();
+    const existingIdx = history.findIndex(s => s.id === session.id);
+    if (existingIdx !== -1) {
+      history[existingIdx] = session;
+    } else {
+      history.unshift(session);
+    }
+    try {
+      localStorage.setItem(this.getKey(STORAGE_KEYS.HISTORY), JSON.stringify(history));
     } catch (e) {
       console.error('Failed to save session history', e);
     }
@@ -104,12 +155,13 @@ class LaterLaneStorage {
   }
 
   updateSessionInHistory(updatedSession) {
+    if (!this.activeUserId) return;
     const history = this.getHistory();
     const index = history.findIndex(s => s.id === updatedSession.id);
     if (index !== -1) {
       history[index] = updatedSession;
       try {
-        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+        localStorage.setItem(this.getKey(STORAGE_KEYS.HISTORY), JSON.stringify(history));
       } catch (e) {
         console.error('Failed to update session', e);
       }
@@ -305,10 +357,11 @@ class LaterLaneStorage {
   }
 
   importAllData(jsonStr) {
+    if (!this.activeUserId) return false;
     try {
       const data = JSON.parse(jsonStr);
       if (data && Array.isArray(data.history)) {
-        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(data.history));
+        this.replaceHistory(data.history);
         if (data.settings) {
           this.saveSettings(data.settings);
         }
@@ -322,8 +375,34 @@ class LaterLaneStorage {
   }
 
   clearAllData() {
-    localStorage.removeItem(STORAGE_KEYS.HISTORY);
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+    if (!this.activeUserId) return;
+    try {
+      localStorage.removeItem(this.getKey(STORAGE_KEYS.HISTORY));
+      localStorage.removeItem(this.getKey(STORAGE_KEYS.CURRENT_SESSION));
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+    } catch (e) {}
+  }
+
+  setPendingCloudSync(flag) {
+    if (!this.activeUserId) return;
+    try {
+      const key = `laterlane_pending_sync_${this.activeUserId}`;
+      if (flag) {
+        localStorage.setItem(key, '1');
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
+
+  hasPendingCloudSync() {
+    if (!this.activeUserId) return false;
+    try {
+      return localStorage.getItem(`laterlane_pending_sync_${this.activeUserId}`) === '1';
+    } catch (e) {
+      return false;
+    }
   }
 }
 

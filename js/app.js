@@ -22,6 +22,7 @@ class LaterLaneApp {
     this.activeSession = null;
     this.sessionTimerInterval = null;
     this.breakTimerInterval = null;
+    this.breakEndsAt = null;
     this.breakSecondsRemaining = 300; // 5 min default
     this.breakTotalSeconds = 300;
     this.isBreakPaused = false;
@@ -111,10 +112,10 @@ class LaterLaneApp {
     this.setAuthBanner(null);
 
     if (isNewSignIn) {
-      this.checkActiveSession();
       this.renderAggregatedInsights();
+      const restoredToActiveScreen = this.checkActiveSession();
 
-      if (this.currentScreen === 'screen-loading' || this.currentScreen === 'screen-auth') {
+      if (!restoredToActiveScreen && (this.currentScreen === 'screen-loading' || this.currentScreen === 'screen-auth')) {
         this.showScreen('screen-intent');
       }
 
@@ -127,6 +128,7 @@ class LaterLaneApp {
     clearInterval(this.breakTimerInterval);
     this.sessionTimerInterval = null;
     this.breakTimerInterval = null;
+    this.breakEndsAt = null;
     this.sound.setAmbient('none');
     this.activeSession = null;
     this.currentUser = null;
@@ -380,17 +382,51 @@ class LaterLaneApp {
 
     if (!newScreenEl || oldScreenEl === newScreenEl) return;
 
+    this.currentScreen = screenId;
     this.animations.transitionScreens(oldScreenEl, newScreenEl, () => {
-      this.currentScreen = screenId;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 
-  // Check if a session was in progress (e.g., page refresh)
+  // Synchronize remaining & focused seconds from wall-clock timestamp so phone sleep never stalls the timer
+  syncSessionWithClock(session) {
+    if (!session || session.isPaused) return false;
+    const total = session.totalSeconds || ((session.durationMinutes || 25) * 60);
+    if (typeof session.endsAt !== 'number') {
+      session.endsAt = Date.now() + Math.max(0, session.secondsRemaining || 0) * 1000;
+    }
+    const remaining = Math.max(0, Math.ceil((session.endsAt - Date.now()) / 1000));
+    const focused = Math.max(0, Math.min(total, total - remaining));
+    const changed = remaining !== session.secondsRemaining || focused !== session.secondsFocused;
+    session.secondsRemaining = remaining;
+    session.secondsFocused = focused;
+    return changed;
+  }
+
+  // Check if a session was in progress (e.g., page refresh or browser tab eviction during phone sleep)
   checkActiveSession() {
-    if (!this.currentUser) return;
+    if (!this.currentUser) return false;
     const saved = this.storage.getCurrentSession();
-    if (saved && saved.secondsRemaining > 0) {
+    if (!saved) return false;
+
+    if (!saved.isPaused) {
+      this.syncSessionWithClock(saved);
+      this.storage.saveCurrentSession(saved);
+      this.activeSession = saved;
+      document.getElementById('resume-session-banner')?.classList.add('hidden');
+
+      if (saved.secondsRemaining > 0) {
+        this.setupFocusScreenUI();
+        this.showScreen('screen-focus');
+        this.startFocusTimer({ preserveEndsAt: true });
+        return true;
+      }
+
+      this.completeFocusSession();
+      return true;
+    }
+
+    if (saved.secondsRemaining > 0) {
       this.activeSession = saved;
       const resumeBanner = document.getElementById('resume-session-banner');
       const resumeIntent = document.getElementById('resume-session-intent');
@@ -398,7 +434,11 @@ class LaterLaneApp {
         resumeIntent.textContent = `"${saved.intent}" (${Math.ceil(saved.secondsRemaining / 60)}m left)`;
         resumeBanner.classList.remove('hidden');
       }
+      return false;
     }
+
+    this.storage.clearCurrentSession();
+    return false;
   }
 
   resumeActiveSession() {
@@ -406,7 +446,7 @@ class LaterLaneApp {
     document.getElementById('resume-session-banner')?.classList.add('hidden');
     this.setupFocusScreenUI();
     this.showScreen('screen-focus');
-    this.startFocusTimer();
+    this.startFocusTimer({ preserveEndsAt: !this.activeSession.isPaused });
   }
 
   dismissActiveSession() {
@@ -425,17 +465,19 @@ class LaterLaneApp {
     const intent = intentInput?.value.trim() || 'Focus Session';
     const durationMins = parseInt(document.getElementById('input-duration')?.value || '25', 10);
     const tag = document.querySelector('.tag-chip.active')?.dataset.tag || 'General';
+    const totalSeconds = durationMins * 60;
 
     this.activeSession = {
       id: 'session_' + Date.now(),
       intent: intent,
       tag: tag,
       durationMinutes: durationMins,
-      totalSeconds: durationMins * 60,
-      secondsRemaining: durationMins * 60,
+      totalSeconds: totalSeconds,
+      secondsRemaining: totalSeconds,
       secondsFocused: 0,
       isPaused: false,
       startedAt: new Date().toISOString(),
+      endsAt: Date.now() + totalSeconds * 1000,
       urges: []
     };
 
@@ -443,7 +485,7 @@ class LaterLaneApp {
     this.setupFocusScreenUI();
     this.showScreen('screen-focus');
     this.sound.playSessionStart();
-    this.startFocusTimer();
+    this.startFocusTimer({ preserveEndsAt: true });
 
     // Start ambient sound if enabled
     if (this.storage.settings.ambientSound !== 'none') {
@@ -466,30 +508,50 @@ class LaterLaneApp {
     this.animations.startBreathingRing(timerRing, timerGlow);
   }
 
-  startFocusTimer() {
+  startFocusTimer({ preserveEndsAt = false } = {}) {
     clearInterval(this.sessionTimerInterval);
+    if (!this.activeSession) return;
+
     this.activeSession.isPaused = false;
+    if (!preserveEndsAt || typeof this.activeSession.endsAt !== 'number') {
+      this.activeSession.endsAt = Date.now() + Math.max(0, this.activeSession.secondsRemaining || 0) * 1000;
+    }
+
     this.updatePauseResumeButtonUI();
+    this.syncSessionWithClock(this.activeSession);
+    this.updateTimerDisplay();
+    this.storage.saveCurrentSession(this.activeSession);
 
-    this.sessionTimerInterval = setInterval(() => {
-      if (!this.activeSession || this.activeSession.isPaused) return;
+    if (this.activeSession.secondsRemaining <= 0) {
+      this.completeFocusSession();
+      return;
+    }
 
-      this.activeSession.secondsRemaining--;
-      this.activeSession.secondsFocused++;
+    this.sessionTimerInterval = setInterval(() => this.tickFocusTimer(), 500);
+  }
 
+  tickFocusTimer() {
+    if (!this.activeSession || this.activeSession.isPaused) return;
+
+    const changed = this.syncSessionWithClock(this.activeSession);
+    if (changed) {
       this.updateTimerDisplay();
       this.storage.saveCurrentSession(this.activeSession);
+    }
 
-      if (this.activeSession.secondsRemaining <= 0) {
-        this.completeFocusSession();
-      }
-    }, 1000);
+    if (this.activeSession.secondsRemaining <= 0) {
+      this.completeFocusSession();
+    }
   }
 
   pauseFocusTimer() {
     if (!this.activeSession) return;
+    this.syncSessionWithClock(this.activeSession);
     this.activeSession.isPaused = true;
+    this.activeSession.endsAt = null;
     clearInterval(this.sessionTimerInterval);
+    this.sessionTimerInterval = null;
+    this.updateTimerDisplay();
     this.updatePauseResumeButtonUI();
     this.storage.saveCurrentSession(this.activeSession);
   }
@@ -497,7 +559,7 @@ class LaterLaneApp {
   togglePauseResume() {
     if (!this.activeSession) return;
     if (this.activeSession.isPaused) {
-      this.startFocusTimer();
+      this.startFocusTimer({ preserveEndsAt: false });
     } else {
       this.pauseFocusTimer();
     }
@@ -624,6 +686,7 @@ class LaterLaneApp {
 
   submitParkUrge(skipReason = false) {
     if (!this.activeSession) return;
+    this.syncSessionWithClock(this.activeSession);
     const input = document.getElementById('input-urge-text');
     let text = input?.value.trim();
 
@@ -631,7 +694,10 @@ class LaterLaneApp {
       text = 'Impulse check';
     }
 
-    const currentMinute = Math.max(1, Math.ceil(this.activeSession.secondsFocused / 60));
+    const currentMinute = Math.min(
+      this.activeSession.durationMinutes || 999,
+      Math.max(1, Math.ceil(this.activeSession.secondsFocused / 60))
+    );
     const reason = skipReason ? 'habit' : (this.selectedReason || 'habit');
 
     const urge = {
@@ -698,6 +764,13 @@ class LaterLaneApp {
   // --- FINISH SESSION & BREAK SCREEN ---
   completeFocusSession() {
     clearInterval(this.sessionTimerInterval);
+    this.sessionTimerInterval = null;
+    if (this.activeSession) {
+      this.syncSessionWithClock(this.activeSession);
+      this.activeSession.isPaused = true;
+      this.activeSession.endsAt = null;
+      this.storage.saveCurrentSession(this.activeSession);
+    }
     this.animations.stopBreathingRing(document.getElementById('timer-ring'));
     this.sound.stopAmbient();
     this.sound.playBreakChime();
@@ -723,26 +796,42 @@ class LaterLaneApp {
 
   startBreakTimer(minutes) {
     clearInterval(this.breakTimerInterval);
+    this.breakTimerInterval = null;
     this.breakTotalSeconds = minutes * 60;
     this.breakSecondsRemaining = minutes * 60;
+    this.breakEndsAt = Date.now() + this.breakSecondsRemaining * 1000;
     this.isBreakPaused = false;
     document.getElementById('break-finished-alert')?.classList.add('hidden');
     const pauseBtn = document.getElementById('btn-break-pause');
     if (pauseBtn) pauseBtn.textContent = 'Pause';
     this.updateBreakTimerDisplay();
 
-    this.breakTimerInterval = setInterval(() => {
-      if (this.isBreakPaused) return;
-      this.breakSecondsRemaining--;
-      this.updateBreakTimerDisplay();
+    this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+  }
 
-      if (this.breakSecondsRemaining <= 0) {
-        clearInterval(this.breakTimerInterval);
-        this.sound.playBreakChime();
-        const alertEl = document.getElementById('break-finished-alert');
-        if (alertEl) alertEl.classList.remove('hidden');
-      }
-    }, 1000);
+  syncBreakTimerWithClock() {
+    if (this.isBreakPaused || typeof this.breakEndsAt !== 'number') return false;
+    const remaining = Math.max(0, Math.ceil((this.breakEndsAt - Date.now()) / 1000));
+    const changed = remaining !== this.breakSecondsRemaining;
+    this.breakSecondsRemaining = remaining;
+    return changed;
+  }
+
+  tickBreakTimer() {
+    if (this.isBreakPaused) return;
+    const changed = this.syncBreakTimerWithClock();
+    if (changed) {
+      this.updateBreakTimerDisplay();
+    }
+
+    if (this.breakSecondsRemaining <= 0) {
+      clearInterval(this.breakTimerInterval);
+      this.breakTimerInterval = null;
+      this.breakEndsAt = null;
+      this.sound.playBreakChime();
+      const alertEl = document.getElementById('break-finished-alert');
+      if (alertEl) alertEl.classList.remove('hidden');
+    }
   }
 
   updateBreakTimerDisplay() {
@@ -754,14 +843,36 @@ class LaterLaneApp {
   }
 
   toggleBreakPause() {
-    this.isBreakPaused = !this.isBreakPaused;
+    if (this.isBreakPaused) {
+      this.isBreakPaused = false;
+      this.breakEndsAt = Date.now() + Math.max(0, this.breakSecondsRemaining) * 1000;
+      clearInterval(this.breakTimerInterval);
+      if (this.breakSecondsRemaining > 0) {
+        this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+      }
+    } else {
+      this.syncBreakTimerWithClock();
+      this.isBreakPaused = true;
+      this.breakEndsAt = null;
+      clearInterval(this.breakTimerInterval);
+      this.breakTimerInterval = null;
+      this.updateBreakTimerDisplay();
+    }
     const btn = document.getElementById('btn-break-pause');
     if (btn) btn.textContent = this.isBreakPaused ? 'Resume' : 'Pause';
   }
 
   addBreakMinutes(mins) {
+    this.syncBreakTimerWithClock();
     this.breakSecondsRemaining += mins * 60;
     this.breakTotalSeconds += mins * 60;
+    document.getElementById('break-finished-alert')?.classList.add('hidden');
+    if (!this.isBreakPaused) {
+      this.breakEndsAt = (this.breakEndsAt && this.breakEndsAt > Date.now() ? this.breakEndsAt : Date.now()) + mins * 60 * 1000;
+      if (!this.breakTimerInterval) {
+        this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+      }
+    }
     this.updateBreakTimerDisplay();
   }
 
@@ -862,6 +973,8 @@ class LaterLaneApp {
   // --- SAVE SESSION & GO TO REFLECTION ---
   finishBreakAndGoToReflection(targetScreen = 'screen-reflection') {
     clearInterval(this.breakTimerInterval);
+    this.breakTimerInterval = null;
+    this.breakEndsAt = null;
 
     if (this.activeSession) {
       // Default unreviewed urges to faded if user completed
@@ -1312,6 +1425,55 @@ class LaterLaneApp {
         }
       }
     });
+
+    // Catch up timers immediately when waking phone from sleep or returning to app
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.handleAppForeground();
+      } else if (this.activeSession) {
+        this.syncSessionWithClock(this.activeSession);
+        this.storage.saveCurrentSession(this.activeSession);
+      }
+    });
+
+    window.addEventListener('pageshow', () => this.handleAppForeground());
+    window.addEventListener('focus', () => this.handleAppForeground());
+    window.addEventListener('pagehide', () => {
+      if (this.activeSession) {
+        this.syncSessionWithClock(this.activeSession);
+        this.storage.saveCurrentSession(this.activeSession);
+      }
+    });
+  }
+
+  handleAppForeground() {
+    if (!this.currentUser) return;
+
+    if (this.activeSession && !this.activeSession.isPaused) {
+      this.syncSessionWithClock(this.activeSession);
+      this.updateTimerDisplay();
+      this.storage.saveCurrentSession(this.activeSession);
+
+      if (this.currentScreen === 'screen-focus') {
+        if (this.activeSession.secondsRemaining <= 0) {
+          this.completeFocusSession();
+          return;
+        }
+        if (!this.sessionTimerInterval) {
+          this.sessionTimerInterval = setInterval(() => this.tickFocusTimer(), 500);
+        }
+        if (this.storage.settings.ambientSound !== 'none' && this.sound?.ctx?.state === 'suspended') {
+          Promise.resolve(this.sound.ctx.resume()).catch(() => {});
+        }
+      }
+    }
+
+    if (this.currentScreen === 'screen-break' && !this.isBreakPaused) {
+      this.tickBreakTimer();
+      if (this.breakSecondsRemaining > 0 && !this.breakTimerInterval) {
+        this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+      }
+    }
   }
 
   openSettingsModal() {

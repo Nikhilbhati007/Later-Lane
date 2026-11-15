@@ -116,6 +116,35 @@ class SoundEngine {
     });
   }
 
+  // Soft double-tap singing bell for mindful scroll buffer completion
+  playScrollBufferEnd() {
+    if (!this.soundEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const pitches = [523.25, 659.25]; // C5 then E5
+
+    pitches.forEach((freq, idx) => {
+      const t = now + idx * 0.18;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.12, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 1.5);
+    });
+  }
+
   // Ambient sound generator (Brown noise / Rain / Drone)
   setAmbient(type) {
     this.init();

@@ -406,11 +406,61 @@
         Break finished — start your next focus block whenever you feel ready.
       </div>
 
+      <!-- MINDFUL BREAK SCROLL GUARD (Digital Wellness Feature) -->
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-3.5 border-teal-500/20">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-[#2DD4BF] animate-pulse"></span>
+              <h3 class="text-sm font-semibold text-main">Mindful Scroll Guard</h3>
+            </div>
+            <p class="text-xs text-sec mt-0.5">
+              Checking your phone during break? Set a gentle boundary so 5 minutes doesn't turn into a doomscroll.
+            </p>
+          </div>
+          <span class="text-[10px] font-medium px-2 py-0.5 rounded-full calm-inset text-aura shrink-0">Buffer</span>
+        </div>
+
+        <div id="scroll-guard-setup" class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div class="inline-flex items-center gap-1.5 calm-card-sm p-1 self-start sm:self-auto">
+            <button type="button" onclick="window.app.setScrollBufferDuration(2)" data-buffer-mins="2" class="scroll-buffer-pill px-3 py-1 rounded-xl text-xs font-medium text-sec hover:text-main transition">2m</button>
+            <button type="button" onclick="window.app.setScrollBufferDuration(3)" data-buffer-mins="3" class="scroll-buffer-pill active px-3 py-1 rounded-xl text-xs font-medium bg-[var(--text-main)] text-[var(--bg-app)] transition">3m</button>
+            <button type="button" onclick="window.app.setScrollBufferDuration(5)" data-buffer-mins="5" class="scroll-buffer-pill px-3 py-1 rounded-xl text-xs font-medium text-sec hover:text-main transition">5m</button>
+          </div>
+          <button type="button" onclick="window.app.startScrollBuffer()" class="calm-btn calm-btn-primary px-4 py-2 text-xs gap-1.5">
+            <span>Start Mindful Browse</span>
+          </button>
+        </div>
+
+        <!-- Active Buffer State -->
+        <div id="scroll-guard-active" class="hidden calm-inset p-3.5 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-main">Browsing window active</span>
+              <span class="text-[11px] text-sec">· Soft chime alerts you</span>
+            </div>
+            <span id="scroll-guard-timer" class="text-sm font-mono font-semibold text-aura tabular-nums">03:00</span>
+          </div>
+          <div class="w-full bg-[var(--bg-glass-hover)] rounded-full h-1.5 overflow-hidden">
+            <div id="scroll-guard-progress" class="bg-gradient-to-r from-[#0D9488] to-[#2DD4BF] h-full rounded-full transition-all duration-500" style="width: 100%;"></div>
+          </div>
+          <div class="flex items-center justify-end">
+            <button type="button" onclick="window.app.stopScrollBuffer()" class="text-[11px] text-sec hover:text-main transition">End window</button>
+          </div>
+        </div>
+
+        <!-- Completed Alert -->
+        <div id="scroll-guard-done" class="hidden calm-inset p-3 flex items-center justify-between gap-3 text-xs">
+          <p class="text-aura font-medium">✨ Browse window ended. Take a breath and return softly to your flow.</p>
+          <button type="button" onclick="window.app.resetScrollBufferUI()" class="calm-btn calm-btn-soft px-2.5 py-1 text-[11px]">Okay</button>
+        </div>
+      </div>
+
       <!-- Urge Expiry Review -->
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between px-1">
           <h3 class="text-xs font-medium text-sec">Urge Expiry Review</h3>
-          <span class="text-xs text-mut">Do you still want to check these?</span>
+          <button type="button" onclick="window.app.openNotificationAuditModal()" class="text-xs text-aura hover:underline">Audit notifications →</button>
         </div>
 
         <div id="urge-expiry-container" class="flex flex-col gap-2.5"></div>
@@ -536,6 +586,26 @@
       <div class="calm-card p-5 sm:p-6 flex flex-col gap-3">
         <h3 class="text-sm font-semibold text-main">Stuck Signal Triggers</h3>
         <div id="reasons-breakdown-badges" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <!-- NOTIFICATION AUDIT & DISTRACTION TRIAGE (Digital Wellness Feature) -->
+      <div class="calm-card p-5 sm:p-6 flex flex-col gap-4 border-indigo-500/20">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-[#818CF8]"></span>
+              <h3 class="text-sm font-semibold text-main">Notification Audit &amp; Distraction Triage</h3>
+            </div>
+            <p class="text-xs text-sec mt-0.5">Audit phone alerts so only what matters interrupts your study blocks</p>
+          </div>
+          <button type="button" onclick="window.app.openNotificationAuditModal()" class="calm-btn calm-btn-soft px-3.5 py-2 text-xs gap-1.5 self-start sm:self-auto shrink-0">
+            <span>Configure Alert Rules</span>
+          </button>
+        </div>
+
+        <div id="reflection-audit-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <!-- Rendered dynamically by window.app.renderNotificationAuditSummary() -->
+        </div>
       </div>
 
       <div class="calm-card p-5 sm:p-6 flex flex-col gap-3">
@@ -690,6 +760,14 @@
 
         <div class="flex items-center justify-between gap-3">
           <div>
+            <label for="setting-wakelock-toggle" class="font-medium text-main block cursor-pointer">Keep Screen Awake (Desk Clock)</label>
+            <span class="text-sec">Prevents phone display from sleeping during focus</span>
+          </div>
+          <input type="checkbox" id="setting-wakelock-toggle" class="w-4 h-4 accent-[#2DD4BF] rounded">
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <div>
             <label for="setting-theme-select" class="font-medium text-main block">Theme</label>
             <span class="text-sec">Midnight Sanctuary or Morning Mist</span>
           </div>
@@ -774,6 +852,74 @@
       <button type="button" onclick="window.app.closeInstallHelpModal()" class="calm-btn calm-btn-soft w-full py-2.5 text-xs">
         Got it
       </button>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 5: NOTIFICATION AUDIT & ALERT TRIAGE               -->
+  <!-- ======================================================== -->
+  <div id="modal-notification-audit" role="dialog" aria-modal="true" aria-labelledby="notification-audit-title" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="calm-card w-full max-w-xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 flex flex-col gap-5">
+      <div class="flex items-center justify-between pb-3 border-b calm-divider">
+        <div>
+          <h3 id="notification-audit-title" class="text-base font-semibold text-main">Notification Audit &amp; Triage</h3>
+          <p class="text-xs text-sec mt-0.5">Decide how each channel behaves during your study blocks</p>
+        </div>
+        <button type="button" aria-label="Close notification audit modal" onclick="window.app.closeNotificationAuditModal()" class="calm-btn calm-btn-soft p-2 rounded-full">
+          <svg class="w-4 h-4 text-sec" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tiers explanation banner -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+        <div class="calm-inset p-2.5 border-l-2 border-[#2DD4BF]">
+          <strong class="text-main block">VIP (Real-Time)</strong>
+          <span class="text-mut text-[11px]">Emergency calls &amp; urgent contacts only</span>
+        </div>
+        <div class="calm-inset p-2.5 border-l-2 border-[#FBBF24]">
+          <strong class="text-main block">Break-Only (Batch)</strong>
+          <span class="text-mut text-[11px]">Mute in focus; check in 5m break</span>
+        </div>
+        <div class="calm-inset p-2.5 border-l-2 border-[#F43F5E]">
+          <strong class="text-main block">Silent / Off (DND)</strong>
+          <span class="text-mut text-[11px]">No banners, badges, or vibrations</span>
+        </div>
+      </div>
+
+      <!-- Interactive Rules List -->
+      <div id="notification-audit-list" class="flex flex-col gap-2.5">
+        <!-- Generated by window.app.renderNotificationAuditList() -->
+      </div>
+
+      <!-- Phone Settings Guide Accordion -->
+      <div class="calm-card-sm p-4 flex flex-col gap-2 text-xs">
+        <div class="flex items-center justify-between cursor-pointer" onclick="window.app.toggleAuditGuideTabs()">
+          <span class="font-medium text-main flex items-center gap-1.5">
+            <span>📱 How to apply this in phone settings</span>
+          </span>
+          <span id="audit-guide-arrow" class="text-mut text-[11px]">View step-by-step guide ▼</span>
+        </div>
+
+        <div id="audit-guide-content" class="hidden flex flex-col gap-2.5 pt-2 border-t calm-divider text-sec leading-relaxed">
+          <div class="flex gap-2">
+            <button type="button" id="tab-btn-android" onclick="window.app.setAuditGuideTab('android')" class="px-2.5 py-1 rounded-lg bg-[var(--text-main)] text-[var(--bg-app)] font-medium text-[11px]">Android DND</button>
+            <button type="button" id="tab-btn-ios" onclick="window.app.setAuditGuideTab('ios')" class="px-2.5 py-1 rounded-lg text-sec hover:text-main font-medium text-[11px]">iPhone Focus</button>
+          </div>
+          <div id="audit-guide-text" class="text-xs"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 pt-1">
+        <button type="button" onclick="window.app.resetNotificationAuditDefaults()" class="calm-btn calm-btn-soft px-3.5 py-2 text-xs text-mut">
+          Reset Defaults
+        </button>
+        <button type="button" onclick="window.app.saveNotificationAuditRules()" class="calm-btn calm-btn-primary px-5 py-2 text-xs">
+          Save Alert Policy
+        </button>
+      </div>
     </div>
   </div>
 

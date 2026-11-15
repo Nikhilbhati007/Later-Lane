@@ -16,8 +16,18 @@ const DEFAULT_SETTINGS = {
   ambientVolume: 0.25,
   reducedMotion: false,
   theme: 'dark',
-  defaultDuration: 25
+  defaultDuration: 25,
+  keepScreenAwake: false
 };
+
+const DEFAULT_NOTIFICATION_RULES = [
+  { id: 'whatsapp', name: 'WhatsApp & Direct Messages', category: 'batch', desc: 'Direct messages & chats' },
+  { id: 'instagram', name: 'Instagram, Reels & TikTok', category: 'off', desc: 'Algorithmic social feeds' },
+  { id: 'youtube', name: 'YouTube & Streaming', category: 'off', desc: 'Video entertainment & recommendations' },
+  { id: 'discord', name: 'Discord & College Slack', category: 'batch', desc: 'Study groups & communities' },
+  { id: 'email', name: 'Email & Academic Portals', category: 'batch', desc: 'Classroom & assignment notices' },
+  { id: 'calls', name: 'Family & VIP Phone Calls', category: 'vip', desc: 'Emergency contacts & direct phone calls' }
+];
 
 class LaterLaneStorage {
   constructor() {
@@ -65,6 +75,18 @@ class LaterLaneStorage {
       console.error('Failed to save settings', e);
     }
     return this.settings;
+  }
+
+  // Notification Audit & Alert Triage (Rubric Feature)
+  getNotificationAuditRules() {
+    if (Array.isArray(this.settings.notificationAuditRules) && this.settings.notificationAuditRules.length > 0) {
+      return this.settings.notificationAuditRules;
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_NOTIFICATION_RULES));
+  }
+
+  saveNotificationAuditRules(rules) {
+    return this.saveSettings({ notificationAuditRules: rules });
   }
 
   // Active Session Persistence (strictly isolated to authenticated user)

@@ -35,6 +35,15 @@ class LaterLaneApp {
     this.deferredInstallPrompt = null;
     this.insightsTimeframe = 'all';
 
+    // Digital Wellness: Scroll Guard, Notification Audit & Wake Lock
+    this.wakeLockSentinel = null;
+    this.scrollBufferMinutes = 3;
+    this.scrollBufferRemaining = 0;
+    this.scrollBufferInterval = null;
+    this.scrollBufferEndsAt = null;
+    this.activeAuditRules = [];
+    this.auditGuideTab = 'android';
+
     this.init();
   }
 
@@ -138,10 +147,13 @@ class LaterLaneApp {
     document.getElementById('screen-loading')?.classList.add('hidden');
     document.getElementById('header-protected-controls')?.classList.add('hidden');
     document.getElementById('resume-session-banner')?.classList.add('hidden');
+    this.releaseWakeLock();
+    this.resetScrollBufferUI();
     this.closeUserMenu();
     this.closeParkUrgeSheet();
     this.closeBoxBreathModal();
     this.closeSettingsModal();
+    this.closeNotificationAuditModal();
 
     // Hide every protected screen explicitly
     this.protectedScreens.forEach((id) => {
@@ -337,6 +349,9 @@ class LaterLaneApp {
     const motionToggle = document.getElementById('setting-motion-toggle');
     if (motionToggle) motionToggle.checked = s.reducedMotion;
 
+    const wakeToggle = document.getElementById('setting-wakelock-toggle');
+    if (wakeToggle) wakeToggle.checked = Boolean(s.keepScreenAwake);
+
     const themeSelect = document.getElementById('setting-theme-select');
     if (themeSelect) themeSelect.value = theme;
 
@@ -450,6 +465,7 @@ class LaterLaneApp {
   }
 
   dismissActiveSession() {
+    this.releaseWakeLock();
     this.storage.clearCurrentSession();
     this.activeSession = null;
     document.getElementById('resume-session-banner')?.classList.add('hidden');
@@ -527,6 +543,7 @@ class LaterLaneApp {
       return;
     }
 
+    this.requestWakeLock();
     this.sessionTimerInterval = setInterval(() => this.tickFocusTimer(), 500);
   }
 
@@ -546,6 +563,7 @@ class LaterLaneApp {
 
   pauseFocusTimer() {
     if (!this.activeSession) return;
+    this.releaseWakeLock();
     this.syncSessionWithClock(this.activeSession);
     this.activeSession.isPaused = true;
     this.activeSession.endsAt = null;
@@ -765,6 +783,7 @@ class LaterLaneApp {
   completeFocusSession() {
     clearInterval(this.sessionTimerInterval);
     this.sessionTimerInterval = null;
+    this.releaseWakeLock();
     if (this.activeSession) {
       this.syncSessionWithClock(this.activeSession);
       this.activeSession.isPaused = true;
@@ -975,6 +994,7 @@ class LaterLaneApp {
     clearInterval(this.breakTimerInterval);
     this.breakTimerInterval = null;
     this.breakEndsAt = null;
+    this.resetScrollBufferUI();
 
     if (this.activeSession) {
       // Default unreviewed urges to faded if user completed
@@ -1168,6 +1188,8 @@ class LaterLaneApp {
         }).join('');
       }
     }
+
+    this.renderNotificationAuditSummary();
   }
 
   // Guided box breathing modal helper for anxious signal
@@ -1325,6 +1347,7 @@ class LaterLaneApp {
         this.closeBoxBreathModal();
         this.closeSettingsModal();
         this.closeInstallHelpModal();
+        this.closeNotificationAuditModal();
         return;
       }
 
@@ -1384,6 +1407,9 @@ class LaterLaneApp {
     });
     document.getElementById('install-help-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'install-help-modal') this.closeInstallHelpModal();
+    });
+    document.getElementById('modal-notification-audit')?.addEventListener('click', (e) => {
+      if (e.target.id === 'modal-notification-audit') this.closeNotificationAuditModal();
     });
 
     // Tag chips selector on Intent screen
@@ -1455,6 +1481,9 @@ class LaterLaneApp {
       this.storage.saveCurrentSession(this.activeSession);
 
       if (this.currentScreen === 'screen-focus') {
+        if (this.storage.settings.keepScreenAwake) {
+          this.requestWakeLock();
+        }
         if (this.activeSession.secondsRemaining <= 0) {
           this.completeFocusSession();
           return;
@@ -1468,10 +1497,15 @@ class LaterLaneApp {
       }
     }
 
-    if (this.currentScreen === 'screen-break' && !this.isBreakPaused) {
-      this.tickBreakTimer();
-      if (this.breakSecondsRemaining > 0 && !this.breakTimerInterval) {
-        this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+    if (this.currentScreen === 'screen-break') {
+      if (this.scrollBufferInterval && this.scrollBufferEndsAt) {
+        this.tickScrollBuffer();
+      }
+      if (!this.isBreakPaused) {
+        this.tickBreakTimer();
+        if (this.breakSecondsRemaining > 0 && !this.breakTimerInterval) {
+          this.breakTimerInterval = setInterval(() => this.tickBreakTimer(), 500);
+        }
       }
     }
   }
@@ -1492,6 +1526,7 @@ class LaterLaneApp {
   saveSettingsFromModal() {
     const soundEnabled = document.getElementById('setting-sound-toggle')?.checked ?? true;
     const reducedMotion = document.getElementById('setting-motion-toggle')?.checked ?? false;
+    const keepScreenAwake = document.getElementById('setting-wakelock-toggle')?.checked ?? false;
     const theme = document.getElementById('setting-theme-select')?.value || 'dark';
     const ambientSound = document.getElementById('setting-ambient-select')?.value || 'none';
     const defaultDuration = parseInt(document.getElementById('setting-default-duration')?.value || '25', 10);
@@ -1499,10 +1534,17 @@ class LaterLaneApp {
     this.storage.saveSettings({
       soundEnabled,
       reducedMotion,
+      keepScreenAwake,
       theme,
       ambientSound,
       defaultDuration
     });
+
+    if (keepScreenAwake && this.activeSession && !this.activeSession.isPaused) {
+      this.requestWakeLock();
+    } else if (!keepScreenAwake) {
+      this.releaseWakeLock();
+    }
 
     if (this.currentUser) {
       this.cloud?.upsertSettings(this.storage.settings);
@@ -1561,6 +1603,280 @@ class LaterLaneApp {
 
   closeInstallHelpModal() {
     document.getElementById('install-help-modal')?.classList.add('hidden');
+  }
+
+  // --- SCREEN WAKE LOCK (Desk Clock Focus Mode) ---
+  async requestWakeLock() {
+    if (!this.storage?.settings?.keepScreenAwake) return;
+    if (this.wakeLockSentinel || this.isRequestingWakeLock) return;
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      this.isRequestingWakeLock = true;
+      try {
+        const sentinel = await navigator.wakeLock.request('screen');
+        if (!this.activeSession || this.activeSession.isPaused || this.currentScreen !== 'screen-focus') {
+          await sentinel.release();
+          this.wakeLockSentinel = null;
+        } else {
+          this.wakeLockSentinel = sentinel;
+          this.wakeLockSentinel.addEventListener('release', () => {
+            this.wakeLockSentinel = null;
+          });
+        }
+      } catch (e) {
+        // Platform or battery-saver may prevent screen wake lock
+      } finally {
+        this.isRequestingWakeLock = false;
+      }
+    }
+  }
+
+  async releaseWakeLock() {
+    if (this.wakeLockSentinel) {
+      try {
+        await this.wakeLockSentinel.release();
+      } catch (e) {}
+      this.wakeLockSentinel = null;
+    }
+  }
+
+  // --- MINDFUL BREAK SCROLL GUARD (Digital Wellness Buffer) ---
+  setScrollBufferDuration(mins) {
+    this.scrollBufferMinutes = mins;
+    document.querySelectorAll('.scroll-buffer-pill').forEach(pill => {
+      const match = parseInt(pill.dataset.bufferMins, 10) === mins;
+      pill.classList.toggle('active', match);
+      pill.className = match
+        ? 'scroll-buffer-pill active px-3 py-1 rounded-xl text-xs font-medium bg-[var(--text-main)] text-[var(--bg-app)] transition'
+        : 'scroll-buffer-pill px-3 py-1 rounded-xl text-xs font-medium text-sec hover:text-main transition';
+    });
+  }
+
+  startScrollBuffer() {
+    clearInterval(this.scrollBufferInterval);
+    this.scrollBufferRemaining = (this.scrollBufferMinutes || 3) * 60;
+    this.scrollBufferEndsAt = Date.now() + this.scrollBufferRemaining * 1000;
+
+    document.getElementById('scroll-guard-setup')?.classList.add('hidden');
+    document.getElementById('scroll-guard-done')?.classList.add('hidden');
+    document.getElementById('scroll-guard-active')?.classList.remove('hidden');
+
+    this.updateScrollBufferDisplay();
+    this.scrollBufferInterval = setInterval(() => this.tickScrollBuffer(), 500);
+  }
+
+  tickScrollBuffer() {
+    if (!this.scrollBufferEndsAt) return;
+    const remaining = Math.max(0, Math.ceil((this.scrollBufferEndsAt - Date.now()) / 1000));
+    this.scrollBufferRemaining = remaining;
+    this.updateScrollBufferDisplay();
+
+    if (remaining <= 0) {
+      clearInterval(this.scrollBufferInterval);
+      this.scrollBufferInterval = null;
+      this.scrollBufferEndsAt = null;
+
+      document.getElementById('scroll-guard-active')?.classList.add('hidden');
+      document.getElementById('scroll-guard-done')?.classList.remove('hidden');
+
+      if (this.sound && typeof this.sound.playScrollBufferEnd === 'function') {
+        this.sound.playScrollBufferEnd();
+      }
+    }
+  }
+
+  updateScrollBufferDisplay() {
+    const mins = Math.floor(Math.max(0, this.scrollBufferRemaining) / 60);
+    const secs = Math.max(0, this.scrollBufferRemaining) % 60;
+    const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    const timerEl = document.getElementById('scroll-guard-timer');
+    if (timerEl) timerEl.textContent = formatted;
+
+    const total = (this.scrollBufferMinutes || 3) * 60;
+    const pct = Math.max(0, Math.min(100, Math.round((this.scrollBufferRemaining / total) * 100)));
+    const bar = document.getElementById('scroll-guard-progress');
+    if (bar) bar.style.width = `${pct}%`;
+  }
+
+  stopScrollBuffer() {
+    clearInterval(this.scrollBufferInterval);
+    this.scrollBufferInterval = null;
+    this.scrollBufferEndsAt = null;
+    this.resetScrollBufferUI();
+  }
+
+  resetScrollBufferUI() {
+    clearInterval(this.scrollBufferInterval);
+    this.scrollBufferInterval = null;
+    this.scrollBufferEndsAt = null;
+    document.getElementById('scroll-guard-active')?.classList.add('hidden');
+    document.getElementById('scroll-guard-done')?.classList.add('hidden');
+    document.getElementById('scroll-guard-setup')?.classList.remove('hidden');
+  }
+
+  // --- NOTIFICATION AUDIT & DISTRACTION TRIAGE (Digital Wellness Rubric) ---
+  openNotificationAuditModal() {
+    if (!this.currentUser) {
+      this.showScreen('screen-auth');
+      return;
+    }
+    this.activeAuditRules = this.storage.getNotificationAuditRules();
+    this.renderNotificationAuditList();
+    this.renderAuditGuideText();
+    document.getElementById('modal-notification-audit')?.classList.remove('hidden');
+  }
+
+  closeNotificationAuditModal() {
+    document.getElementById('modal-notification-audit')?.classList.add('hidden');
+  }
+
+  renderNotificationAuditList() {
+    const container = document.getElementById('notification-audit-list');
+    if (!container) return;
+
+    container.innerHTML = this.activeAuditRules.map(rule => {
+      const isVip = rule.category === 'vip';
+      const isBatch = rule.category === 'batch';
+      const isOff = rule.category === 'off';
+
+      return `
+        <div class="calm-card-sm p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <span class="font-medium text-main block">${this.escapeHtml(rule.name)}</span>
+            <span class="text-mut text-[11px]">${this.escapeHtml(rule.desc)}</span>
+          </div>
+
+          <div class="inline-flex items-center gap-1.5 p-1 rounded-xl calm-inset shrink-0">
+            <button type="button" 
+                    onclick="window.app.setNotificationRuleCategory('${rule.id}', 'vip')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition ${isVip ? 'bg-[#2DD4BF]/20 text-[#2DD4BF] border border-[#2DD4BF]/40 font-semibold' : 'text-sec hover:text-main'}">
+              VIP
+            </button>
+            <button type="button" 
+                    onclick="window.app.setNotificationRuleCategory('${rule.id}', 'batch')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition ${isBatch ? 'bg-[#FBBF24]/20 text-[#FBBF24] border border-[#FBBF24]/40 font-semibold' : 'text-sec hover:text-main'}">
+              Break Only
+            </button>
+            <button type="button" 
+                    onclick="window.app.setNotificationRuleCategory('${rule.id}', 'off')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition ${isOff ? 'bg-[#F43F5E]/20 text-[#F43F5E] border border-[#F43F5E]/40 font-semibold' : 'text-sec hover:text-main'}">
+              Silent / DND
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  setNotificationRuleCategory(channelId, category) {
+    const item = this.activeAuditRules.find(r => r.id === channelId);
+    if (item) {
+      item.category = category;
+      this.renderNotificationAuditList();
+    }
+  }
+
+  toggleAuditGuideTabs() {
+    const content = document.getElementById('audit-guide-content');
+    const arrow = document.getElementById('audit-guide-arrow');
+    if (!content) return;
+    const isHidden = content.classList.contains('hidden');
+    content.classList.toggle('hidden', !isHidden);
+    if (arrow) arrow.textContent = isHidden ? 'Hide guide ▲' : 'View step-by-step guide ▼';
+  }
+
+  setAuditGuideTab(os) {
+    this.auditGuideTab = os;
+    const btnAndroid = document.getElementById('tab-btn-android');
+    const btnIos = document.getElementById('tab-btn-ios');
+    if (btnAndroid && btnIos) {
+      if (os === 'android') {
+        btnAndroid.className = 'px-2.5 py-1 rounded-lg bg-[var(--text-main)] text-[var(--bg-app)] font-medium text-[11px]';
+        btnIos.className = 'px-2.5 py-1 rounded-lg text-sec hover:text-main font-medium text-[11px]';
+      } else {
+        btnIos.className = 'px-2.5 py-1 rounded-lg bg-[var(--text-main)] text-[var(--bg-app)] font-medium text-[11px]';
+        btnAndroid.className = 'px-2.5 py-1 rounded-lg text-sec hover:text-main font-medium text-[11px]';
+      }
+    }
+    this.renderAuditGuideText();
+  }
+
+  renderAuditGuideText() {
+    const guideEl = document.getElementById('audit-guide-text');
+    if (!guideEl) return;
+
+    if (this.auditGuideTab === 'android') {
+      guideEl.innerHTML = `
+        <ol class="list-decimal list-inside flex flex-col gap-1.5 text-[11px]">
+          <li>Open <strong>Settings &gt; Sound &amp; Vibration &gt; Do Not Disturb</strong>.</li>
+          <li>Under <strong>"Who can interrupt"</strong>, set Calls to <em>"Starred / Favorite contacts only"</em> (your VIPs).</li>
+          <li>Under <strong>"Apps that can interrupt"</strong>, remove social media and video apps; allow only your essential academic app.</li>
+          <li>Turn on DND when starting a Later Lane focus block.</li>
+        </ol>
+      `;
+    } else {
+      guideEl.innerHTML = `
+        <ol class="list-decimal list-inside flex flex-col gap-1.5 text-[11px]">
+          <li>Open <strong>Settings &gt; Focus &gt; Work or Study</strong> (or create custom "Study").</li>
+          <li>Under <strong>"Allowed Notifications &gt; People"</strong>, add only emergency &amp; family contacts.</li>
+          <li>Under <strong>"Allowed Apps"</strong>, silence social feeds and streaming apps.</li>
+          <li>Enable <em>"Focus Status"</em> so friends know you are in Later Lane study mode.</li>
+        </ol>
+      `;
+    }
+  }
+
+  saveNotificationAuditRules() {
+    this.storage.saveNotificationAuditRules(this.activeAuditRules);
+    if (this.currentUser) {
+      this.cloud?.upsertSettings(this.storage.settings);
+    }
+    this.renderNotificationAuditSummary();
+    this.closeNotificationAuditModal();
+  }
+
+  resetNotificationAuditDefaults() {
+    const defaults = [
+      { id: 'whatsapp', name: 'WhatsApp & Direct Messages', category: 'batch', desc: 'Direct messages & chats' },
+      { id: 'instagram', name: 'Instagram, Reels & TikTok', category: 'off', desc: 'Algorithmic social feeds' },
+      { id: 'youtube', name: 'YouTube & Streaming', category: 'off', desc: 'Video entertainment & recommendations' },
+      { id: 'discord', name: 'Discord & College Slack', category: 'batch', desc: 'Study groups & communities' },
+      { id: 'email', name: 'Email & Academic Portals', category: 'batch', desc: 'Classroom & assignment notices' },
+      { id: 'calls', name: 'Family & VIP Phone Calls', category: 'vip', desc: 'Emergency contacts & direct phone calls' }
+    ];
+    this.activeAuditRules = defaults;
+    this.renderNotificationAuditList();
+  }
+
+  renderNotificationAuditSummary() {
+    const summaryContainer = document.getElementById('reflection-audit-summary');
+    if (!summaryContainer) return;
+
+    const rules = this.storage.getNotificationAuditRules();
+    const vipCount = rules.filter(r => r.category === 'vip').length;
+    const batchCount = rules.filter(r => r.category === 'batch').length;
+    const offCount = rules.filter(r => r.category === 'off').length;
+
+    const history = this.storage.getHistory();
+    const totalSessions = history.length;
+    const estimatedSaved = Math.max(12, totalSessions * (batchCount + offCount) * 4);
+
+    summaryContainer.innerHTML = `
+      <div class="calm-inset p-3 flex flex-col gap-1">
+        <span class="text-mut text-[11px]">Triage Policy</span>
+        <strong class="text-main font-medium">${vipCount} VIP · ${batchCount} Batch · ${offCount} Muted</strong>
+        <span class="text-sec text-[10px]">Configured rules</span>
+      </div>
+      <div class="calm-inset p-3 flex flex-col gap-1">
+        <span class="text-mut text-[11px]">Protected Study</span>
+        <strong class="text-aura font-medium">~${estimatedSaved} Interruption Alerts</strong>
+        <span class="text-sec text-[10px]">Silenced or batched to breaks</span>
+      </div>
+      <div class="calm-inset p-3 flex flex-col gap-1">
+        <span class="text-mut text-[11px]">Break Habit</span>
+        <strong class="text-main font-medium">${batchCount > 0 ? 'Batch to 5m Break' : 'Zero interruptions'}</strong>
+        <span class="text-sec text-[10px]">Triage on planned breaks</span>
+      </div>
+    `;
   }
 
   escapeHtml(str) {

@@ -36,6 +36,20 @@ Self-Determination Theory (Ryan & Deci, 2000) highlights that extrinsic shame an
 - No locked phone screens that cause panic during emergencies.
 Instead, it surfaces gentle patterns: the **Attention Waveform** reveals the exact session minutes when restlessness peaks, transforming self-criticism into objective self-awareness.
 
+### 2.3 The Cognitive Switching Penalty (Dr. Gloria Mark, UC Irvine)
+Cognitive science research led by Dr. Gloria Mark demonstrates that when a worker or student is interrupted by a digital prompt or reflexively task-switches to their phone, it takes an average of **23 minutes and 15 seconds** to return to their original deep focus flow. Frequent task-switching causes mental fatigue, cognitive residue, and elevated stress.
+Later Lane quantifies this saved cognitive recovery lag through the **Switching Penalty Protected Calculator**:
+$$\text{Lag Protected (minutes)} = \text{Parked Urges} \times 23$$
+Rather than punitive tracking, the app displays: *"By parking 3 impulses rather than task-switching, you protected an estimated 1h 9m of focus recovery lag."*
+
+### 2.4 The 60-Second Urge Surfer: Neuroplasticity & Habit Loop Extinction
+Automatic phone unlocking is an over-learned stimulus-response motor habit (Stimulus $\rightarrow$ Craving $\rightarrow$ Thumb Reflex $\rightarrow$ Dopamine Reward). Clinical psychologist Dr. G. Alan Marlatt established that fighting cravings head-on causes "ironic process rebound" (the pink elephant effect).
+Later Lane embeds the **60-Second Urge Surfer (Live Wave Rider)** directly into the impulse parking workflow:
+1. **Phase 1: The Rising Wave (60s–45s):** Somatic body scan prompt (*"Notice the physical itch in your fingertips. Take a deep breath without judging it."*).
+2. **Phase 2: The Crest Peak (44s–20s):** Dopamine peak pacing (*"Craving intensity has peaked. You don't have to obey the reflex—ride over the crest."*).
+3. **Phase 3: The Subsiding Wave (19s–1s):** Prefrontal cortex recovery (*"The craving wave is breaking and retreating. Prefrontal control has returned."*).
+4. **Phase 4: Wave Surfed! (0s):** Dopamine cycle safely resolved without yielding to the distractor, strengthening neuroplastic pathways for impulse control.
+
 ---
 
 ## 3. System Architecture & Technical Innovation
@@ -78,7 +92,7 @@ Across two rounds of usability testing with 6 diverse participants:
 
 # Part 2: Project Presentation Slide Deck Outline
 
-This 10-slide outline is formatted and ready for delivery during the final course presentation:
+This 14-slide master outline is formatted and ready for delivery during the final course presentation, aligning directly with all course themes (*switching penalty, stimulation, neuroplasticity, habits, brain downtime, overthinking*):
 
 ### Slide 1: Title & Vision
 * **Title:** Later Lane — Focus & Urge Parking
@@ -120,19 +134,32 @@ This 10-slide outline is formatted and ready for delivery during the final cours
   - **Silent / DND (Off):** Algorithmic social media feeds and news alerts.
 * **Impact:** Provides step-by-step phone configuration guides for Android DND and iPhone Focus modes, preventing ~24 interruption alerts per study block.
 
-### Slide 8: Technical Excellence & Mobile Innovation
-* **Wall-Clock Precision:** Never freezes when mobile phones lock or switch tabs (`endsAt` target timestamps).
-* **Desk Clock Wake Lock:** Native `navigator.wakeLock` integration keeps screen gently alive on desks.
-* **100% Offline Synthesizer:** Web Audio API generates rain, ocean waves, and 432Hz sleep drone without external sound files.
-* **Cloud Architecture:** Supabase Google OAuth + PostgreSQL Row Level Security (RLS) ensuring total privacy.
+### Slide 8: Digital Wellness Feature 3 — Attention Dashboard & Switching Penalty
+* **Attention Waveform:** Minute histogram (0-5m, 6-10m, 11-15m, 16-20m, 21-25m, 31m+) identifying cognitive restlessness windows.
+* **Switching Penalty Calculator:** Quantifies avoided recovery lag based on Gloria Mark's cognitive research ($23\text{m }15\text{s}$ per interruption).
+* **Non-Shaming Framing:** Validates students by celebrating focus recovery lag protected rather than shaming distraction count.
 
-### Slide 9: Usability Testing & Design Iterations
-* **Evaluation:** 6 consenting participants; 100% task completion; 6.67 / 7.0 SEQ score.
-* **Two Major Design Revisions:**
-  1. *Visual Ergonomics:* Shifted from high-stress gamer contrast to the Serene Sanctuary restorative theme.
-  2. *Mobile Reliability:* Replaced fragile `setInterval` with rock-solid wall-clock sync across device sleep.
+### Slide 9: Academic Themes Deep-Dive: Gloria Mark & Alan Marlatt
+* **Switching Penalty & Working Memory:** Demonstrating how sub-5s urge parking shields working memory from interruption context shifts.
+* **60s Urge Surfing (Live Wave Rider):** Guided 4-phase wave pacing (Rising $\rightarrow$ Crest Peak $\rightarrow$ Subsiding $\rightarrow$ Wave Surfed) that directly rewires automatic thumb reflexes via neuroplasticity.
 
-### Slide 10: Conclusion & Key Takeaways
+### Slide 10: Usability Testing Results
+* **Evaluation:** 6 consenting participants; 100% task completion; 6.67 / 7.0 SEQ score; 5.0s avg time to park urge.
+* **Qualitative Quotes:** Participants praise the non-shaming philosophy and the relief of exteriorizing racing thoughts.
+
+### Slide 11: Revision 1 — Visual Ergonomics & Aesthetic Overhaul
+* **Before:** Harsh neon amber on pitch black gamer aesthetic; caused eye fatigue and test anxiety (3.2 / 7 calm score).
+* **After:** Serene Sanctuary design system with Midnight canvas, smoky frosted glass, and 4s breathing aura ring (6.8 / 7 calm score).
+
+### Slide 12: Revision 2 — Mobile Technical Resilience & Sleep Sync
+* **Before:** Naive `setInterval` counter froze when mobile phones locked, desynchronizing the countdown.
+* **After:** Resilient wall-clock target timestamps (`endsAt`) and visibility listeners ensuring sub-second accuracy across phone sleep states.
+
+### Slide 13: System Architecture & Production Stack
+* **PWA Architecture:** Service Worker v5.3.0, Web Audio synthesizer, Screen Wake Lock API, Supabase PostgreSQL, and Vercel Edge CDN.
+
+### Slide 14: Conclusion & Live Demonstration
 * **Summary:** Digital wellness succeeds when we replace punitive guilt with self-compassion, clear boundaries, and non-judgmental pattern awareness.
-* **Live Prototype:** Scan QR code or visit `https://later-lane.vercel.app`.
+* **Live Prototype:** `https://later-lane.vercel.app`
+* **GitHub Repository:** `https://github.com/Nikhilbhati007/Later-Lane`
 * **Q&A:** Open for questions.

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Later Lane — Project 2 Presentation Slides</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #07090F;
+      color: #F4F5F7;
+    }
+    .slide-card {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(24px);
+      border-radius: 20px;
+    }
+    .slide {
+      display: none;
+      min-height: 85vh;
+    }
+    .slide.active {
+      display: flex;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-6 sm:p-10 select-none">
+
+  <!-- TOP BAR -->
+  <header class="flex items-center justify-between pb-4 border-b border-white/10 text-xs">
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_12px_#2DD4BF]"></span>
+      <span class="font-semibold tracking-wide text-white">LATER LANE</span>
+      <span class="text-gray-500">· Project 2 Presentation</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <a href="./Later_Lane_Project_2_Presentation.pptx" download class="text-xs font-medium text-[#2DD4BF] hover:underline flex items-center gap-1">
+        <span>⬇ Download .PPTX</span>
+      </a>
+      <span id="slide-indicator" class="text-gray-400 font-mono text-xs">Slide 1 / 13</span>
+    </div>
+  </header>
+
+  <!-- SLIDES CONTAINER -->
+  <main class="flex-1 flex items-center justify-center py-6">
+
+    <!-- SLIDE 1: Title -->
+    <section class="slide active flex-col justify-center max-w-4xl w-full gap-6 text-left" data-title="Title">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold w-fit">
+        PROJECT 2 · DESIGN A DIGITAL WELLNESS APP
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-tight">
+        Later Lane
+        <span class="block text-2xl sm:text-3xl font-medium text-[#818CF8] mt-2">Focus &amp; Urge Parking Workspace</span>
+      </h1>
+      <p class="text-base sm:text-lg text-gray-300 max-w-2xl leading-relaxed">
+        A calm digital sanctuary that validates impulses instead of fighting them. Park phone cravings in under 5 seconds, understand underlying cognitive friction, and discover that over 70% of urges naturally evaporate if simply paused.
+      </p>
+      <div class="flex flex-wrap items-center gap-4 pt-4 text-xs">
+        <span class="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-gray-300">
+          Presenter: <strong class="text-white">Nikhil Bhati</strong>
+        </span>
+        <a href="https://later-lane.vercel.app" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-[#2DD4BF]/20 border border-[#2DD4BF]/40 text-[#2DD4BF] font-medium hover:bg-[#2DD4BF]/30 transition">
+          Live Prototype: later-lane.vercel.app ↗
+        </a>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: Problem Statement -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Problem Statement">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">1. Research &amp; Problem Definition</span>
+        <h2 class="text-3xl font-bold text-white mt-1">The Real User Problem: Why Willpower Fails</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="slide-card p-6 flex flex-col gap-3 border-teal-500/20">
+          <h3 class="text-base font-semibold text-[#2DD4BF]">The Friction-Impulse Loop</h3>
+          <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+            • <strong>The Willpower Myth:</strong> Distraction is not a moral failing. When students hit cognitive friction (a compiler bug, difficult math step, energy dip), the brain reflexively craves quick relief.<br><br>
+            • <strong>5-Second Reflex:</strong> Thumb muscle memory unlocks the smartphone before the conscious mind can intervene.<br><br>
+            • <strong>The Break Trap:</strong> A 5-minute study break routinely devolves into a 40-minute doomscroll with zero transition boundaries.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3 border-rose-500/20">
+          <h3 class="text-base font-semibold text-rose-400">Existing Alternatives &amp; Points of Failure</h3>
+          <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+            • <strong>Forest &amp; Gamified Apps:</strong> Kills virtual trees on exit; induces guilt and causes complete session abandonment when interrupted.<br><br>
+            • <strong>Apple Screen Time:</strong> Blunt lockouts trivially bypassed via <em>"Ignore limit for 15m"</em>; produces moral shame without addressing root causes.<br><br>
+            • <strong>Standard Pomodoro:</strong> Rigid 25/5 timers offer nowhere to park intrusive thoughts, forcing minds to fight mental loops.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: User Interviews -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="User Interviews">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">2. User Research</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Qualitative Interviews: 4 Student Personas</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="slide-card p-5">
+          <div class="flex items-center justify-between mb-1.5">
+            <h4 class="font-semibold text-sm text-[#2DD4BF]">Participant A (CS Undergrad, 21)</h4>
+            <span class="text-[10px] text-gray-400">The Multitasker</span>
+          </div>
+          <p class="text-xs text-gray-300 italic">"When my code throws a compiler error, my thumb reaches for my phone like muscle memory. I unlock it and find myself on reels before I even realize it."</p>
+        </div>
+        <div class="slide-card p-5">
+          <div class="flex items-center justify-between mb-1.5">
+            <h4 class="font-semibold text-sm text-[#818CF8]">Participant B (Biology Pre-Med, 20)</h4>
+            <span class="text-[10px] text-gray-400">The Anxious Memorizer</span>
+          </div>
+          <p class="text-xs text-gray-300 italic">"Passive reading triggers boredom urges. The 5-minute break is my danger zone: I open TikTok and lose 40 minutes."</p>
+        </div>
+        <div class="slide-card p-5">
+          <div class="flex items-center justify-between mb-1.5">
+            <h4 class="font-semibold text-sm text-[#FBBF24]">Participant C (Design Major, 22)</h4>
+            <span class="text-[10px] text-gray-400">The Creative Procrastinator</span>
+          </div>
+          <p class="text-xs text-gray-300 italic">"Random thoughts constantly pop up while writing essays. If I don't write them down, I fear forgetting them, so I open tabs and go down rabbit holes."</p>
+        </div>
+        <div class="slide-card p-5">
+          <div class="flex items-center justify-between mb-1.5">
+            <h4 class="font-semibold text-sm text-rose-400">Participant D (Economics Major, 23)</h4>
+            <span class="text-[10px] text-gray-400">The Chronic Alert Checker</span>
+          </div>
+          <p class="text-xs text-gray-300 italic">"Phantom vibration syndrome. Even on DND, I worry I'll miss group project texts. I need a clear alert triage filter."</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: Core Philosophy -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Core Innovation">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">3. Psychological Rationale</span>
+        <h2 class="text-3xl font-bold text-white mt-1">The Core Innovation: Urge Parking &amp; Defusion</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
+        <div class="slide-card p-5 flex flex-col gap-2.5 border-teal-500/20">
+          <span class="font-semibold text-[#2DD4BF] text-base">1. Exteriorization</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Cognitive Defusion:</strong> Writing down the urge ('Check WhatsApp', 'Look up meme') in under 5s moves the impulse from an internal urgent itch to an external object on a digital shelf.<br><br>
+            • <strong>Mental Loop Closure:</strong> Brain receives permission to let go without fear of forgetting.
+          </p>
+        </div>
+        <div class="slide-card p-5 flex flex-col gap-2.5 border-indigo-500/20">
+          <span class="font-semibold text-[#818CF8] text-base">2. The Stuck Signal</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>5 Friction Triggers:</strong><br>
+            1. Confusing (Task unclear)<br>
+            2. Bored (Low stimulation)<br>
+            3. Tired (Energy dip)<br>
+            4. Anxious (Scope heavy)<br>
+            5. Habit (Thumb reflex)<br><br>
+            • Instant micro-interventions (e.g. split step in half, 30s box breathing) replace guilt with support.
+          </p>
+        </div>
+        <div class="slide-card p-5 flex flex-col gap-2.5 border-amber-500/20">
+          <span class="font-semibold text-[#FBBF24] text-base">3. Urge Expiry</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Impulse Surfing:</strong> Cravings crest like waves and naturally evaporate within 15 minutes if not fed.<br><br>
+            • <strong>The "Aha!" Moment:</strong> At break, users evaluate parked urges. Empirically, <strong>78% of parked urges fade away</strong>, saving ~30 minutes per session.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: Prototype Linked Screens -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Linked Screens">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">4. Prototype Architecture</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Interactive Prototype: 4 Linked Screens</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+        <div class="slide-card p-4 flex flex-col gap-2">
+          <strong class="text-white text-sm">Screen 1: Intent</strong>
+          <span class="text-teal-400 font-mono text-[10px]">Launch Canvas</span>
+          <p class="text-gray-400">Single clear focus goal, preset durations (15m, 25m, 45m, 60m), domain tags, offline ambient sound selector.</p>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2">
+          <strong class="text-white text-sm">Screen 2: Focus</strong>
+          <span class="text-indigo-400 font-mono text-[10px]">Serene Workspace</span>
+          <p class="text-gray-400">Circular countdown, 4s breathing aura ring, sub-5s urge parking shelf, desk-clock Screen Wake Lock.</p>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2">
+          <strong class="text-white text-sm">Screen 3: Break</strong>
+          <span class="text-amber-400 font-mono text-[10px]">Planned Rest</span>
+          <p class="text-gray-400">5-minute rest timer, Mindful Scroll Guard (3m buffer), Urge Expiry review evaluation, singing bowl chimes.</p>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2">
+          <strong class="text-white text-sm">Screen 4: Insights</strong>
+          <span class="text-rose-400 font-mono text-[10px]">Attention Patterns</span>
+          <p class="text-gray-400">Attention Waveform histogram, Stuck Signal breakdown, Notification Audit &amp; triage tool, zero guilt scores.</p>
+        </div>
+      </div>
+      <div class="text-xs text-center text-gray-400 pt-2">
+        Accessible Prototype Live at: <a href="https://later-lane.vercel.app" target="_blank" class="text-[#2DD4BF] underline">https://later-lane.vercel.app</a>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: Feature Spotlight 1 -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Feature: Scroll Guard">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">5. Rubric Feature 1</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Study Focus Planner &amp; Mindful Break Scroll Guard</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs sm:text-sm">
+        <div class="slide-card p-6 flex flex-col gap-3">
+          <h3 class="font-semibold text-base text-[#2DD4BF]">Study Session Focus Flow</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Intentional Deep Work:</strong> Students define an actionable destination before starting. Anchoring focus reduces procrastination.<br><br>
+            • <strong>Ambient Audio Synthesizer:</strong> Built-in Web Audio API generates Rain, Brownian waves, and 432Hz sleep drones offline with zero external audio assets.<br><br>
+            • <strong>Desk-Clock Wake Lock:</strong> Native <code>navigator.wakeLock</code> keeps phone screens gently illuminated on study desks without abrupt lockouts.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3">
+          <h3 class="font-semibold text-base text-[#FBBF24]">Mindful Break Scroll Guard</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>The Break Hazard:</strong> Most Pomodoro sessions collapse when students check their phones and get trapped by social feeds.<br><br>
+            • <strong>3-Minute Intentional Window:</strong> If checking a phone during the 5m break, students activate a 2m, 3m, or 5m Mindful Browse buffer.<br><br>
+            • <strong>Gentle Boundary Alert:</strong> When the buffer ends, a soft singing bowl sounds with a cue: <em>"Browse window ended. Return softly to your flow."</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Feature Spotlight 2 -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Feature: Notification Audit">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">6. Rubric Feature 2</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Notification Audit &amp; Distraction Triage Tool</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
+        <div class="slide-card p-5 flex flex-col gap-2.5">
+          <span class="font-semibold text-[#2DD4BF] text-base">VIP (Real-Time)</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Allowed in Focus:</strong> Direct family phone calls, emergency contacts, critical academic portal alerts.<br><br>
+            • Removes phantom vibration anxiety—users know true emergencies will reach them.
+          </p>
+        </div>
+        <div class="slide-card p-5 flex flex-col gap-2.5">
+          <span class="font-semibold text-[#FBBF24] text-base">Break-Only (Batch)</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Muted in Focus:</strong> WhatsApp chats, Discord study groups, student Slack channels, personal email.<br><br>
+            • Triaged intentionally during the 5m break, eliminating continuous micro-distractions.
+          </p>
+        </div>
+        <div class="slide-card p-5 flex flex-col gap-2.5">
+          <span class="font-semibold text-rose-400 text-base">Silent / DND (Off)</span>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Completely Silenced:</strong> Instagram, TikTok, YouTube recommendations, shopping, news alerts.<br><br>
+            • Features step-by-step phone setup guides for Android DND and iPhone Focus modes.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: Feature Spotlight 3 -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Feature: Attention Insights">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">7. Rubric Feature 3</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Non-Shaming Attention Insights Dashboard</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs sm:text-sm">
+        <div class="slide-card p-6 flex flex-col gap-3">
+          <h3 class="font-semibold text-base text-[#2DD4BF]">The Attention Waveform</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Session Minute Histogram:</strong> Maps exactly which session minutes (0-5m, 6-10m, 11-15m, 16-20m, 21-25m, 31m+) phone impulses surface.<br><br>
+            • <strong>Predictive Self-Regulation:</strong> Students learn: <em>'I always feel an itch around minute 14.'</em> Anticipating it lets them ride the wave peacefully.<br><br>
+            • <strong>Zero Guilt Scores:</strong> Visualized as quiet teal/indigo gradients—no red warning banners or broken streaks.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3">
+          <h3 class="font-semibold text-base text-[#818CF8]">Stuck Signal &amp; Expiry Analytics</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Root Trigger Breakdown:</strong> Shows whether impulses were driven by Confusion, Boredom, Fatigue, Anxiety, or Habit.<br><br>
+            • <strong>Fade Rate Ratio:</strong> Tracks what percentage of parked urges naturally faded without action (averaging 78% across student tests).<br><br>
+            • <strong>Distraction Saved:</strong> Converts faded urges into estimated saved study time (e.g. <em>'Saved ~40 minutes of reflex scrolling'</em>).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Usability Results -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Usability Testing">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">8. Usability Testing</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Empirical Usability Evaluation (6 Consenting Users)</h2>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="slide-card p-4 text-center">
+          <span class="text-3xl font-bold text-[#2DD4BF]">100%</span>
+          <span class="text-[11px] text-gray-400 block mt-1">Task Completion Rate</span>
+        </div>
+        <div class="slide-card p-4 text-center">
+          <span class="text-3xl font-bold text-[#818CF8]">5.0s</span>
+          <span class="text-[11px] text-gray-400 block mt-1">Avg Time to Park Urge</span>
+        </div>
+        <div class="slide-card p-4 text-center">
+          <span class="text-3xl font-bold text-[#FBBF24]">6.67 / 7</span>
+          <span class="text-[11px] text-gray-400 block mt-1">Single Ease Score (SEQ)</span>
+        </div>
+        <div class="slide-card p-4 text-center">
+          <span class="text-3xl font-bold text-rose-400">78%</span>
+          <span class="text-[11px] text-gray-400 block mt-1">Urge Natural Fade Rate</span>
+        </div>
+      </div>
+      <div class="slide-card p-5 text-xs text-gray-300 flex flex-col gap-2.5">
+        <p>• <strong>Participant P1 (CS):</strong> <em>"Pressing 'P' instantly opened the box. I typed 'Check WhatsApp', hit Enter, and watched it slide down into the tray. It felt like putting a thought in a drawer so I could stop holding it in my head."</em></p>
+        <p>• <strong>Participant P2 (Biology):</strong> <em>"Seeing 'Faded away — 100%' during the break was an eye-opener. It proved that my impulse was just boredom, not an actual need."</em></p>
+        <p>• <strong>Participant P5 (Engineering):</strong> <em>"Every other app makes me feel like a bad student when I want to check my phone. Later Lane is the first app that says it is completely normal to feel an urge."</em></p>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: Revision 1 -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Revision 1">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">9. Design Decisions</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Revision 1: Visual Ergonomics &amp; Emotional Tone</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs sm:text-sm">
+        <div class="slide-card p-6 flex flex-col gap-3 border-rose-500/20">
+          <h3 class="font-semibold text-base text-rose-400">BEFORE: High-Contrast Gamer Theme</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Visual Palette:</strong> Jet black background (#000000), harsh neon amber (#FFB703), sharp borders, and terminal-style monospace typography.<br><br>
+            • <strong>User Feedback:</strong> <em>"The harsh neon contrast feels like a hacker terminal or exam monitor. When I am stressed about coursework, it makes me feel tense, not calm."</em> (P3)<br><br>
+            • <strong>Emotional Tone:</strong> High cognitive load; felt like a diagnostic test.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3 border-teal-500/20">
+          <h3 class="font-semibold text-base text-[#2DD4BF]">AFTER: Serene Sanctuary Design System</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Visual Palette:</strong> Midnight Twilight canvas (#07090F), soft Morning Mist light mode (#F3F5F8), smoky frosted glass, and calming teal/indigo aura.<br><br>
+            • <strong>Organic Breathing Orb:</strong> A gentle 4-second expanding/contracting breathing ring guides user respiration during study.<br><br>
+            • <strong>Outcome:</strong> Calm ratings increased from 3.2/7 to 6.8/7; users described it as a quiet restorative refuge.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: Revision 2 -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Revision 2">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">10. Design Decisions</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Revision 2: Mobile Technical Resilience &amp; Sleep Sync</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs sm:text-sm">
+        <div class="slide-card p-6 flex flex-col gap-3 border-rose-500/20">
+          <h3 class="font-semibold text-base text-rose-400">BEFORE: Naive setInterval Counter</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Implementation:</strong> Relied on <code>setInterval(..., 1000)</code> counting <code>secondsRemaining--</code>.<br><br>
+            • <strong>Failure State:</strong> Mobile OS (Android/iOS) freezes timers while screens lock to conserve battery.<br><br>
+            • <strong>Disastrous UX:</strong> A student studying for 20 minutes unlocked their phone to find the timer had only counted down 12 seconds, demanding a manual 'Resume' button.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3 border-teal-500/20">
+          <h3 class="font-semibold text-base text-[#2DD4BF]">AFTER: Wall-Clock Target Anchors</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Implementation:</strong> Timer computes remaining time from target timestamp:<br>
+            <code>endsAt = Date.now() + (totalSeconds * 1000)</code><br><br>
+            • <strong>Event Re-Sync:</strong> Listens to <code>visibilitychange</code>, <code>pageshow</code>, and <code>focus</code> events. Waking the phone instantly syncs with real wall-clock time.<br><br>
+            • <strong>Zero Drift:</strong> 100% precision across device sleep cycles with seamless auto-resume.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 12: Architecture & Tech Stack -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Architecture">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">11. Implementation</span>
+        <h2 class="text-3xl font-bold text-white mt-1">System Architecture &amp; Production Stack</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+        <div class="slide-card p-4 flex flex-col gap-2 border-teal-500/20">
+          <strong class="text-[#2DD4BF] text-sm">Frontend Client</strong>
+          <span class="text-gray-400 text-[11px]">Vanilla JS (ES6+), Tailwind CSS, GSAP 3.12 animations. Zero heavy bundles, sub-1.2s First Contentful Paint.</span>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2 border-indigo-500/20">
+          <strong class="text-[#818CF8] text-sm">Offline &amp; Audio</strong>
+          <span class="text-gray-400 text-[11px]">Service Worker v5.2.0, Cache-first PWA, Web Audio API offline sound synthesis, Screen Wake Lock API.</span>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2 border-amber-500/20">
+          <strong class="text-[#FBBF24] text-sm">Backend &amp; Auth</strong>
+          <span class="text-gray-400 text-[11px]">Supabase JS v2.119.0, Google OAuth PKCE flow, PostgreSQL database with Row Level Security (RLS) data isolation.</span>
+        </div>
+        <div class="slide-card p-4 flex flex-col gap-2 border-rose-500/20">
+          <strong class="text-rose-400 text-sm">Hosting &amp; CI/CD</strong>
+          <span class="text-gray-400 text-[11px]">Vercel Edge Platform, automated Git CI/CD, HTTPS security headers. GitHub: Nikhilbhati007/Later-Lane.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 13: Conclusion & Demo -->
+    <section class="slide flex-col justify-center max-w-5xl w-full gap-6 text-left" data-title="Conclusion">
+      <div>
+        <span class="text-xs font-bold text-[#2DD4BF] uppercase tracking-wider">12. Summary &amp; Demo</span>
+        <h2 class="text-3xl font-bold text-white mt-1">Conclusion &amp; Live Application Demo</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs sm:text-sm">
+        <div class="slide-card p-6 flex flex-col gap-3">
+          <h3 class="font-semibold text-base text-[#2DD4BF]">Key Project Takeaways</h3>
+          <p class="text-gray-300 leading-relaxed">
+            1. <strong>Willpower is the Wrong Tool:</strong> Suppressing urges causes rebound. Parking thoughts exteriorizes anxiety and frees working memory.<br><br>
+            2. <strong>Breaks Need Guardrails:</strong> The Mindful Scroll Guard prevents 5-minute study breaks from silently expanding into 45-minute doomscrolls.<br><br>
+            3. <strong>Non-Shaming Works:</strong> When apps eliminate punishment and visualize attention waveforms, students develop genuine self-regulation.
+          </p>
+        </div>
+        <div class="slide-card p-6 flex flex-col gap-3 border-amber-500/20">
+          <h3 class="font-semibold text-base text-[#FBBF24]">Interactive Live Prototype</h3>
+          <p class="text-gray-300 leading-relaxed">
+            • <strong>Live App:</strong> <a href="https://later-lane.vercel.app" target="_blank" class="text-white underline">https://later-lane.vercel.app</a><br><br>
+            • <strong>GitHub:</strong> <a href="https://github.com/Nikhilbhati007/Later-Lane" target="_blank" class="text-white underline">github.com/Nikhilbhati007/Later-Lane</a><br><br>
+            • <strong>Installation:</strong> PWA installable on iOS, Android, and Desktop Chrome.<br><br>
+            • <strong>Open for Live Interactive Demo &amp; Questions!</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION CONTROLS -->
+  <footer class="flex items-center justify-between pt-4 border-t border-white/10 text-xs">
+    <div class="text-gray-500 hidden sm:block">
+      Tip: Use <kbd class="px-2 py-0.5 rounded bg-white/10 text-gray-300 font-mono">←</kbd> and <kbd class="px-2 py-0.5 rounded bg-white/10 text-gray-300 font-mono">→</kbd> keys to navigate
+    </div>
+    <div class="flex items-center gap-2 mx-auto sm:mx-0">
+      <button type="button" id="prev-btn" onclick="prevSlide()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition disabled:opacity-30">
+        ← Previous
+      </button>
+      <button type="button" id="next-btn" onclick="nextSlide()" class="px-4 py-2 rounded-xl bg-[#2DD4BF] hover:bg-[#20b2a0] text-[#07090F] font-semibold transition disabled:opacity-30">
+        Next →
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const indicator = document.getElementById('slide-indicator');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    function updateSlide() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+      indicator.textContent = `Slide ${currentSlide + 1} / ${slides.length} (${slides[currentSlide].dataset.title || ''})`;
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === slides.length - 1;
+      nextBtn.textContent = currentSlide === slides.length - 1 ? 'Finished ✓' : 'Next →';
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>

@@ -544,6 +544,30 @@
         </div>
       </div>
 
+      <!-- Cognitive Switching Penalty Shield (Dr. Gloria Mark Attention Research) -->
+      <div class="calm-card p-4 sm:p-5 flex items-center justify-between gap-4 bg-gradient-to-r from-teal-500/10 via-indigo-500/10 to-transparent border-teal-500/20">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-main">Switching Penalty Protected</span>
+              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-400">Gloria Mark Lab</span>
+            </div>
+            <p class="text-[11px] text-sec mt-0.5 leading-snug">
+              Every parked urge avoids the ~23m 15s recovery lag required to refocus after an interruption.
+            </p>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <span id="stat-switching-penalty" class="text-xl sm:text-2xl font-bold text-teal-400 tabular-nums">0m</span>
+          <span class="text-[10px] text-mut block uppercase tracking-wider">Lag Avoided</span>
+        </div>
+      </div>
+
       <!-- 4 Calm Stat Cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="calm-card-sm p-4">
@@ -688,6 +712,27 @@
         <div id="suggestion-action-area"></div>
       </div>
 
+      <!-- 60-Second Urge Surfing Option (Alan Marlatt Neuroplasticity Protocol) -->
+      <div class="calm-inset p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-indigo-500/20 bg-indigo-500/5">
+        <div class="flex items-start gap-2.5">
+          <span class="text-lg">🌊</span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-semibold text-main">Can't shake the itch?</span>
+              <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400">Neuroplasticity</span>
+            </div>
+            <p class="text-[11px] text-sec leading-snug mt-0.5">
+              Dopamine spikes peak and subside in ~60s. Ride the wave instead of giving in.
+            </p>
+          </div>
+        </div>
+        <button type="button" 
+                onclick="window.app.startUrgeSurfer()" 
+                class="calm-btn calm-btn-soft shrink-0 px-3 py-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 border-indigo-500/30">
+          Surf (60s)
+        </button>
+      </div>
+
       <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
         <button type="button" onclick="window.app.submitParkUrge(false)" class="calm-btn calm-btn-primary flex-1 py-3 text-sm">
           Park Urge &amp; Return
@@ -723,6 +768,57 @@
       <button type="button" onclick="window.app.closeBoxBreathModal()" class="calm-btn calm-btn-soft w-full py-2.5 text-xs">
         I Feel Centered · Back to Lane
       </button>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2B: 60-SECOND LIVE URGE SURFER (Alan Marlatt Wave)  -->
+  <!-- ======================================================== -->
+  <div id="modal-urge-surfer" role="dialog" aria-modal="true" aria-labelledby="urge-surfer-modal-title" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="calm-card w-full max-w-sm p-6 sm:p-7 flex flex-col items-center text-center gap-5">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 text-[11px] font-medium mb-1.5">
+          <span>🌊</span>
+          <span>Neuroplasticity Protocol</span>
+        </div>
+        <h3 id="urge-surfer-modal-title" class="text-lg font-semibold text-main">Urge Surfing</h3>
+        <p class="text-xs text-sec mt-0.5">Impulses peak like ocean waves. Ride it for 60 seconds.</p>
+      </div>
+
+      <!-- Wave Visual & Progress Ring -->
+      <div class="relative w-44 h-44 flex items-center justify-center my-1">
+        <!-- SVG Ring -->
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="70" class="stroke-white/10 fill-none" stroke-width="8"></circle>
+          <circle id="urge-surfer-progress" cx="80" cy="80" r="70" class="stroke-indigo-400 fill-none transition-all duration-300 ease-linear" stroke-width="8" stroke-dasharray="440" stroke-dashoffset="0" stroke-linecap="round"></circle>
+        </svg>
+
+        <!-- Inner Wave Graphic & Counter -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <div id="urge-surfer-wave-icon" class="text-2xl animate-pulse mb-1">🌊</div>
+          <span id="urge-surfer-timer" class="text-3xl font-bold text-main tabular-nums tracking-tight">60</span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-sec">seconds</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Phase Guidance -->
+      <div class="calm-inset p-3.5 rounded-2xl w-full flex flex-col gap-1 min-h-[76px] justify-center">
+        <h4 id="urge-surfer-phase-title" class="text-xs font-semibold text-indigo-400">Phase 1: The Rising Wave</h4>
+        <p id="urge-surfer-phase-desc" class="text-xs text-sec leading-relaxed">
+          Notice the physical itch in your fingertips. Take a deep breath without judging it.
+        </p>
+      </div>
+
+      <!-- Control Buttons -->
+      <div class="flex items-center gap-2.5 w-full pt-1">
+        <button type="button" onclick="window.app.cancelUrgeSurfer()" class="calm-btn calm-btn-soft flex-1 py-2.5 text-xs text-sec">
+          Exit Early
+        </button>
+        <button type="button" onclick="window.app.finishUrgeSurfer()" class="calm-btn calm-btn-primary flex-1 py-2.5 text-xs text-main">
+          Itch Faded ✨
+        </button>
+      </div>
     </div>
   </div>
 

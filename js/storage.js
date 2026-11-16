@@ -316,9 +316,21 @@ class LaterLaneStorage {
       };
     }
 
+    // Cognitive Switching Penalty avoided (Gloria Mark research: ~23 minutes 15s recovery lag per interruption)
+    const switchingPenaltyMins = totalUrges * 23;
+    const penaltyHours = Math.floor(switchingPenaltyMins / 60);
+    const penaltyRemMins = switchingPenaltyMins % 60;
+    const switchingPenaltyText = penaltyHours > 0
+      ? (penaltyRemMins > 0 ? `${penaltyHours}h ${penaltyRemMins}m` : `${penaltyHours}h`)
+      : `${switchingPenaltyMins}m`;
+
     // Generate gentle, non-judgmental insight sentences
     const insights = [];
     if (totalUrges > 0) {
+      if (switchingPenaltyMins >= 23) {
+        insights.push(`By parking ${totalUrges} impulse${totalUrges > 1 ? 's' : ''} rather than task-switching, you protected an estimated ${switchingPenaltyText} of focus recovery lag (Gloria Mark switching penalty).`);
+      }
+
       if (fadeRate >= 50) {
         insights.push(`${fadeRate}% of your parked urges faded away without you acting on them. Writing them down really gave your brain permission to release the itch.`);
       } else {
@@ -356,6 +368,8 @@ class LaterLaneStorage {
       totalUrges,
       fadedUrges,
       fadeRate,
+      switchingPenaltyMins,
+      switchingPenaltyText,
       reasonsCount,
       minuteBuckets,
       peakBucket,

@@ -43,6 +43,10 @@ class LaterLaneApp {
     this.scrollBufferEndsAt = null;
     this.activeAuditRules = [];
     this.auditGuideTab = 'android';
+    this.urgeSurferInterval = null;
+    this.urgeSurferSeconds = 60;
+    this.urgeSurferStart = null;
+    this.urgeSurferDraftText = '';
 
     this.init();
   }
@@ -151,6 +155,7 @@ class LaterLaneApp {
     this.resetScrollBufferUI();
     this.closeUserMenu();
     this.closeParkUrgeSheet();
+    this.cancelUrgeSurfer();
     this.closeBoxBreathModal();
     this.closeSettingsModal();
     this.closeNotificationAuditModal();
@@ -980,11 +985,18 @@ class LaterLaneApp {
       textEl.textContent = `Tap whether each impulse naturally faded or if you still genuinely want to check it now. (${evaluated.length}/${total} reviewed)`;
     } else {
       const percentage = Math.round((fadedCount / total) * 100);
+      const lagMins = total * 23;
+      const lagHours = Math.floor(lagMins / 60);
+      const lagRemMins = lagMins % 60;
+      const lagText = lagHours > 0
+        ? (lagRemMins > 0 ? `${lagHours}h ${lagRemMins}m` : `${lagHours}h`)
+        : `${lagMins}m`;
+
       titleEl.textContent = `${fadedCount} of ${total} urges faded on their own (${percentage}%)`;
       if (percentage >= 50) {
-        textEl.textContent = `By parking them in Later Lane instead of acting on reflex, you saved ~${fadedCount * 10} minutes of phone distraction.`;
+        textEl.textContent = `By parking urges in Later Lane, you saved ~${fadedCount * 10}m of phone distraction and avoided an estimated ${lagText} of cognitive recovery lag (switching penalty).`;
       } else {
-        textEl.textContent = `You created space to choose intentionally instead of reacting instantly. Enjoy your break.`;
+        textEl.textContent = `You protected ~${lagText} of cognitive recovery lag (Gloria Mark switching penalty) by resisting automatic phone interruption. Enjoy your break.`;
       }
     }
   }
@@ -1094,11 +1106,13 @@ class LaterLaneApp {
     const totalMinsEl = document.getElementById('stat-total-minutes');
     const totalUrgesEl = document.getElementById('stat-total-urges');
     const fadeRateEl = document.getElementById('stat-fade-rate');
+    const switchingPenaltyEl = document.getElementById('stat-switching-penalty');
 
     if (totalSessionsEl) totalSessionsEl.textContent = stats.totalSessions;
     if (totalMinsEl) totalMinsEl.textContent = stats.totalFocusMinutes;
     if (totalUrgesEl) totalUrgesEl.textContent = stats.totalUrges;
     if (fadeRateEl) fadeRateEl.textContent = `${stats.fadeRate}%`;
+    if (switchingPenaltyEl) switchingPenaltyEl.textContent = stats.switchingPenaltyText || '0m';
 
     // Dynamic Insight sentences
     const insightsContainer = document.getElementById('insights-sentences-list');
@@ -1220,6 +1234,134 @@ class LaterLaneApp {
   closeBoxBreathModal() {
     clearInterval(this.activeBoxBreathingInterval);
     document.getElementById('box-breathing-modal')?.classList.add('hidden');
+  }
+
+  // ========================================================
+  // 60-SECOND URGE SURFER (Alan Marlatt Neuroplasticity Protocol)
+  // ========================================================
+  startUrgeSurfer() {
+    const input = document.getElementById('input-urge-text');
+    this.urgeSurferDraftText = input?.value?.trim() || 'Phone impulse';
+
+    // Close park urge sheet
+    this.closeParkUrgeSheet();
+
+    const modal = document.getElementById('modal-urge-surfer');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    this.urgeSurferSeconds = 60;
+    this.urgeSurferStart = Date.now();
+
+    this.updateUrgeSurferUI(60);
+
+    clearInterval(this.urgeSurferInterval);
+    this.urgeSurferInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - this.urgeSurferStart) / 1000);
+      const remaining = Math.max(0, 60 - elapsed);
+      this.urgeSurferSeconds = remaining;
+      this.updateUrgeSurferUI(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(this.urgeSurferInterval);
+        this.urgeSurferInterval = null;
+        this.completeUrgeSurferAuto();
+      }
+    }, 250);
+  }
+
+  updateUrgeSurferUI(remaining) {
+    const timerEl = document.getElementById('urge-surfer-timer');
+    const progressEl = document.getElementById('urge-surfer-progress');
+    const phaseTitleEl = document.getElementById('urge-surfer-phase-title');
+    const phaseDescEl = document.getElementById('urge-surfer-phase-desc');
+    const waveIcon = document.getElementById('urge-surfer-wave-icon');
+
+    if (timerEl) timerEl.textContent = String(remaining);
+
+    if (progressEl) {
+      const circumference = 440;
+      const fraction = remaining / 60;
+      const offset = circumference * (1 - fraction);
+      progressEl.style.strokeDashoffset = offset;
+    }
+
+    if (remaining > 45) {
+      if (phaseTitleEl) phaseTitleEl.textContent = 'Phase 1: The Rising Wave';
+      if (phaseDescEl) phaseDescEl.textContent = 'Notice the physical itch in your fingertips. Take a deep breath without judging it.';
+      if (waveIcon) waveIcon.textContent = '🌊';
+    } else if (remaining > 20) {
+      if (phaseTitleEl) phaseTitleEl.textContent = 'Phase 2: The Crest Peak';
+      if (phaseDescEl) phaseDescEl.textContent = "Craving intensity has peaked. You don't have to obey the reflex — ride over the crest.";
+      if (waveIcon) waveIcon.textContent = '🏄';
+    } else if (remaining > 0) {
+      if (phaseTitleEl) phaseTitleEl.textContent = 'Phase 3: The Subsiding Wave';
+      if (phaseDescEl) phaseDescEl.textContent = 'The craving wave is breaking and retreating. Prefrontal control has returned.';
+      if (waveIcon) waveIcon.textContent = '✨';
+    } else {
+      if (phaseTitleEl) phaseTitleEl.textContent = 'Wave Surfed! 🧘';
+      if (phaseDescEl) phaseDescEl.textContent = 'The craving has dissolved. You just rewired an automatic thumb impulse!';
+      if (waveIcon) waveIcon.textContent = '🎉';
+    }
+  }
+
+  completeUrgeSurferAuto() {
+    this.sound?.playUrgeParked();
+    if (this.activeSession) {
+      const currentMinute = Math.min(
+        this.activeSession.durationMinutes || 999,
+        Math.max(1, Math.ceil(this.activeSession.secondsFocused / 60))
+      );
+      const urge = {
+        id: 'urge_' + Date.now(),
+        text: this.urgeSurferDraftText,
+        reason: 'habit',
+        minuteInSession: currentMinute,
+        timestamp: new Date().toISOString(),
+        faded: true
+      };
+      this.activeSession.urges = this.activeSession.urges || [];
+      this.activeSession.urges.push(urge);
+      this.storage.saveCurrentSession(this.activeSession);
+      this.renderParkedUrgesInLane();
+      this.animations?.bumpBadge(document.getElementById('parked-urges-badge'));
+    }
+
+    setTimeout(() => {
+      this.cancelUrgeSurfer();
+    }, 1600);
+  }
+
+  finishUrgeSurfer() {
+    clearInterval(this.urgeSurferInterval);
+    this.urgeSurferInterval = null;
+    this.sound?.playUrgeParked();
+    if (this.activeSession) {
+      const currentMinute = Math.min(
+        this.activeSession.durationMinutes || 999,
+        Math.max(1, Math.ceil(this.activeSession.secondsFocused / 60))
+      );
+      const urge = {
+        id: 'urge_' + Date.now(),
+        text: this.urgeSurferDraftText,
+        reason: 'habit',
+        minuteInSession: currentMinute,
+        timestamp: new Date().toISOString(),
+        faded: true
+      };
+      this.activeSession.urges = this.activeSession.urges || [];
+      this.activeSession.urges.push(urge);
+      this.storage.saveCurrentSession(this.activeSession);
+      this.renderParkedUrgesInLane();
+      this.animations?.bumpBadge(document.getElementById('parked-urges-badge'));
+    }
+    this.cancelUrgeSurfer();
+  }
+
+  cancelUrgeSurfer() {
+    clearInterval(this.urgeSurferInterval);
+    this.urgeSurferInterval = null;
+    document.getElementById('modal-urge-surfer')?.classList.add('hidden');
   }
 
   quickSplitStepPrompt() {
@@ -1344,6 +1486,7 @@ class LaterLaneApp {
       if (e.key === 'Escape') {
         this.closeUserMenu();
         this.closeParkUrgeSheet();
+        this.cancelUrgeSurfer();
         this.closeBoxBreathModal();
         this.closeSettingsModal();
         this.closeInstallHelpModal();
@@ -1410,6 +1553,9 @@ class LaterLaneApp {
     });
     document.getElementById('modal-notification-audit')?.addEventListener('click', (e) => {
       if (e.target.id === 'modal-notification-audit') this.closeNotificationAuditModal();
+    });
+    document.getElementById('modal-urge-surfer')?.addEventListener('click', (e) => {
+      if (e.target.id === 'modal-urge-surfer') this.cancelUrgeSurfer();
     });
 
     // Tag chips selector on Intent screen

@@ -3,7 +3,7 @@
  * Ensures 100% offline functionality while keeping app files fresh when online.
  */
 
-const CACHE_NAME = 'laterlane-v5.2.0';
+const CACHE_NAME = 'laterlane-v5.3.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
